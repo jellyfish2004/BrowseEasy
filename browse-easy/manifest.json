@@ -1,0 +1,23 @@
+{
+    "manifest_version": 3,
+    "name": "Chat Sidebar",
+    "version": "1.0",
+    "description": "A sidebar chat UI powered by an LLM API",
+    "permissions": [
+      "sidePanel"
+    ],
+    "host_permissions": [
+      "https://api.your-llm.com/*"
+    ],
+    "action": {
+      "default_title": "Open Chat Sidebar"
+    },
+    "side_panel": {
+      "default_path": "panel.html",
+      "openPanelOnActionClick": true
+    },
+    "background": {
+      "service_worker": "background.js"
+    }
+  }
+  
