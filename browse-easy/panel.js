@@ -1,5 +1,3 @@
-import config from './config.js';
-
 const messagesEl = document.getElementById('messages');
 const inputEl = document.getElementById('input');
 
@@ -10,7 +8,7 @@ inputEl.addEventListener('keydown', async e => {
   inputEl.value = '';
   inputEl.disabled = true;
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${config.GEMINI_API_KEY}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${window.config.GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
