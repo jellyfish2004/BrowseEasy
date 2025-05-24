@@ -1,16 +1,91 @@
 const messagesEl = document.getElementById('messages');
 const inputEl = document.getElementById('input');
+const audioModeButton = document.getElementById('audioModeButton'); // Get the new button
+
+let chatHistory = []; // Initialize chat history
+const MAX_HISTORY_MESSAGES = 10; // Max number of messages (user + bot) to keep, excluding system prompt & current query
+
+// Listener for the new audio mode button
+if (audioModeButton) {
+  audioModeButton.addEventListener('click', () => {
+    // Define properties for the popup window
+    const popupWidth = 300;
+    const popupHeight = 250;
+    // Calculate position to center it (optional, browsers might handle this differently)
+    const left = (screen.width / 2) - (popupWidth / 2);
+    const top = (screen.height / 2) - (popupHeight / 2);
+
+    chrome.windows.create({
+      url: chrome.runtime.getURL('audio_input.html'),
+      type: 'popup',
+      width: popupWidth,
+      height: popupHeight,
+      left: Math.round(left),
+      top: Math.round(top)
+    });
+  });
+}
+
+// Listen for messages from other parts of the extension (e.g., audio_input.js)
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'processAudioTranscript' && message.transcript) {
+    console.log('[BrowseEasy Panel] Received transcript:', message.transcript);
+    append('user', message.transcript);
+    // Add user message to history before sending to Gemini
+    chatHistory.push({ role: "user", parts: [{ text: message.transcript }] });
+    if (chatHistory.length > MAX_HISTORY_MESSAGES) {
+        chatHistory.splice(0, chatHistory.length - MAX_HISTORY_MESSAGES);
+    }
+
+    inputEl.value = ''; 
+    inputEl.disabled = true; 
+
+    (async () => {
+      try {
+        const { botResponseText, botResponseForHistory } = await sendToGemini(message.transcript);
+        append('bot', botResponseText);
+        // Add bot response to history
+        chatHistory.push(botResponseForHistory);
+        if (chatHistory.length > MAX_HISTORY_MESSAGES) {
+            chatHistory.splice(0, chatHistory.length - MAX_HISTORY_MESSAGES);
+        }
+      } catch (err) {
+        append('error', err.toString());
+      } finally {
+        inputEl.disabled = false;
+      }
+    })();
+    sendResponse({ success: true, message: "Transcript received and processing initiated." });
+    return true; 
+  } else if (message.type === 'anotherMessageType') {
+    // Handle other potential messages if any in the future
+  }
+  // Return false or nothing for synchronous message handlers or if not handling this message
+  // to prevent the port from being kept open unnecessarily.
+  return false; 
+});
 
 inputEl.addEventListener('keydown', async e => {
   if (e.key !== 'Enter' || !inputEl.value.trim()) return;
   const userMsg = inputEl.value.trim();
   append('user', userMsg);
+  // Add user message to history before sending to Gemini
+  chatHistory.push({ role: "user", parts: [{ text: userMsg }] });
+  if (chatHistory.length > MAX_HISTORY_MESSAGES) {
+      chatHistory.splice(0, chatHistory.length - MAX_HISTORY_MESSAGES);
+  }
+
   inputEl.value = '';
   inputEl.disabled = true;
   
   try {
-    const response = await sendToGemini(userMsg);
-    append('bot', response);
+    const { botResponseText, botResponseForHistory } = await sendToGemini(userMsg);
+    append('bot', botResponseText);
+    // Add bot response to history
+    chatHistory.push(botResponseForHistory);
+    if (chatHistory.length > MAX_HISTORY_MESSAGES) {
+        chatHistory.splice(0, chatHistory.length - MAX_HISTORY_MESSAGES);
+    }
   } catch (err) {
     append('error', err.toString());
   } finally {
@@ -20,7 +95,7 @@ inputEl.addEventListener('keydown', async e => {
 });
 
 async function sendToGemini(userMessage) {
-  const systemPrompt = `You are BrowseEasy, an AI assistant that helps make web pages more accessible. You have access to tools that can modify the current webpage to improve accessibility.
+  const systemPromptText = `You are BrowseEasy, an AI assistant that helps make web pages more accessible. You have access to tools that can modify the current webpage to improve accessibility.
 
 Available tools:
 - highlightLinks: Highlight all links with yellow background
@@ -46,18 +121,31 @@ When users ask for accessibility improvements, use the appropriate tools. For ex
 Always explain what you're doing and be helpful in suggesting other accessibility improvements.
 
 User request: ${userMessage}`;
+  
+  // Construct messages: system prompt, then history, then current user message
+  const messagesForAPI = [
+    // System prompt can be implicitly handled by Gemini if we structure history correctly
+    // Or we can add it as the first "user" or "model" turn if needed. 
+    // For now, let's assume the history itself carries the context post-initial prompt.
+    // The `systemPromptText` variable above is just for reference or if we want to include it directly.
+    // Let's adjust: Gemini API often expects history to start with a user message if no explicit system instruction is part of `contents`.
+    // A common pattern is [{role: "user", parts: [SYSTEM_PROMPT_HERE]}, {role: "model", parts: ["OK"]}, ...history... , {role: "user", parts: [CURRENT_MESSAGE]}]
+    // For simplicity with function calling, the Gemini docs show system instructions in the first user message sometimes.
+    // Let's use a structure where system instructions are part of the *first* user message in the API call for this turn.
+  ];
+
+  // Prepend chat history to the current user message for the API call
+  // The Gemini API expects alternating user and model roles.
+  const currentTurnContents = [
+    ...chatHistory, // chatHistory already contains {role, parts}
+    { 
+      role: "user", 
+      parts: [{ text: `${systemPromptText}\n\nUser request: ${userMessage}` }] // Combine system prompt with current user message for this turn's context
+    }
+  ];
 
   const requestBody = {
-    contents: [
-      {
-        role: "user",
-        parts: [
-          {
-            text: systemPrompt
-          }
-        ]
-      }
-    ],
+    contents: currentTurnContents, // Send history + current message (with system prompt)
     tools: [
       {
         function_declarations: ACCESSIBILITY_TOOLS
@@ -67,9 +155,7 @@ User request: ${userMessage}`;
 
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${window.config.GEMINI_API_KEY}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json', },
     body: JSON.stringify(requestBody)
   });
 
@@ -84,11 +170,18 @@ User request: ${userMessage}`;
     throw new Error('No response from AI');
   }
 
-  // Check if the AI wants to use tools
+  // This part needs to return two things:
+  // 1. The text/HTML string to display in the chat (botResponseText)
+  // 2. The raw part(s) from the AI to store in chatHistory (botResponseForHistory)
+  let botResponseForHistory = candidate.content; // This should be {role: "model", parts: [...]}
+  let botResponseText = '';
+  let appliedToolsHtml = '';
+
   const functionCalls = candidate.content?.parts?.filter(part => part.functionCall);
-  
+  const textPart = candidate.content?.parts?.find(part => part.text);
+  let aiTextResponse = textPart?.text || '';
+
   if (functionCalls && functionCalls.length > 0) {
-    // Execute the function calls
     let toolResults = [];
     
     for (const functionCall of functionCalls) {
@@ -111,39 +204,51 @@ User request: ${userMessage}`;
       }
     }
 
-    // Get the text response
-    const textPart = candidate.content?.parts?.find(part => part.text);
-    let response = textPart?.text || '';
-
-    // Add information about executed tools
     if (toolResults.length > 0) {
-      const toolMessages = toolResults.map(result => {
+      appliedToolsHtml = '<div class="applied-tools-summary"><h4>Tools Executed:</h4><ul>';
+      toolResults.forEach(result => {
         if (result.success) {
-          return `✅ Applied ${result.name}`;
+          appliedToolsHtml += `<li class="tool-success">✅ ${result.name}</li>`;
         } else {
-          return `❌ Failed to apply ${result.name}: ${result.error}`;
+          appliedToolsHtml += `<li class="tool-failure">❌ ${result.name}: ${result.error}</li>`;
         }
       });
-      
-      if (response) {
-        response += '\n\n' + toolMessages.join('\n');
-      } else {
-        response = toolMessages.join('\n');
-      }
+      appliedToolsHtml += '</ul></div>';
     }
 
-    return response || 'Accessibility adjustments applied!';
+    // Construct botResponseText for display
+    if (aiTextResponse && appliedToolsHtml) botResponseText = `${aiTextResponse}\n\n${appliedToolsHtml}`;
+    else if (aiTextResponse) botResponseText = aiTextResponse;
+    else if (appliedToolsHtml) botResponseText = appliedToolsHtml;
+    else botResponseText = 'Accessibility adjustments applied!';
+
   } else {
-    // Regular text response
-    const textPart = candidate.content?.parts?.find(part => part.text);
-    return textPart?.text || 'I can help you make this page more accessible. Try asking me to make it more readable, highlight links, or adjust the size!';
+    botResponseText = aiTextResponse || 'I can help you make this page more accessible. Try asking me to make it more readable, highlight links, or adjust the size!';
   }
+  
+  // If botResponseForHistory is undefined or doesn't have role, construct it.
+  // Gemini API response candidate.content should already be in the correct format {role: "model", parts: [...]}
+  if (!botResponseForHistory || !botResponseForHistory.role) {
+      botResponseForHistory = { role: "model", parts: candidate.content?.parts || [{text: botResponseText}] };
+  }
+
+  return { botResponseText, botResponseForHistory };
 }
 
 function append(type, text) {
   const div = document.createElement('div');
   div.className = `message ${type}`;
-  div.textContent = text;
+  if (type === 'bot') {
+    // Process basic markdown for bot messages and allow HTML
+    let processedText = text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')     // Italics
+      .replace(/\n/g, '<br>');                   // Newlines
+    div.innerHTML = processedText;
+  } else {
+    div.textContent = text; // User messages and errors as plain text
+    div.style.whiteSpace = 'pre-wrap'; // Preserve formatting for user input/errors
+  }
   messagesEl.appendChild(div);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }

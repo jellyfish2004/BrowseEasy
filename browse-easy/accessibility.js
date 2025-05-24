@@ -46,16 +46,15 @@ class AccessibilityManager {
   // 2. Dyslexia Friendly Text
   dyslexiaFriendly(enabled) {
     const id = 'browse-easy-dyslexia-friendly';
+    const textElementsSelector = 'p, div, span, li, a, article, section, main, aside, header, footer, caption, td, th, label, h1, h2, h3, h4, h5, h6';
     if (enabled) {
       const css = `
-        * {
+        ${textElementsSelector} {
           font-family: 'Arial', 'Helvetica', sans-serif !important;
-          line-height: 1.5 !important;
-          letter-spacing: 0.1em !important;
+          line-height: 1.6 !important; /* Slightly increased default line-height */
+          letter-spacing: 0.12em !important; /* Slightly increased default letter-spacing */
           word-spacing: 0.2em !important;
-        }
-        p, div, span, li {
-          text-align: left !important;
+          /* text-align: left !important; /* Removing this to respect original alignment more often */
         }
       `;
       this.injectCSS(css, id);
@@ -145,16 +144,19 @@ class AccessibilityManager {
   // 7. Adjust Text Spacing
   adjustTextSpacing(spacing) {
     const id = 'browse-easy-text-spacing';
+    const textElementsSelector = 'p, div, span, li, a, article, section, main, aside, header, footer, caption, td, th, label, h1, h2, h3, h4, h5, h6';
+    const blockElementsSelector = 'p, div, li, article, section, main, aside, header, footer, h1, h2, h3, h4, h5, h6';
+
     if (spacing !== 100) {
-      const spaceMultiplier = spacing / 100;
+      const spaceMultiplier = Math.max(0.5, Math.min(3, spacing / 100)); // Clamp multiplier between 0.5 and 3
       const css = `
-        * {
-          line-height: ${1.2 * spaceMultiplier} !important;
-          letter-spacing: ${0.05 * spaceMultiplier}em !important;
-          word-spacing: ${0.1 * spaceMultiplier}em !important;
+        ${textElementsSelector} {
+          line-height: calc(1.5em * ${spaceMultiplier}) !important; 
+          letter-spacing: calc(0.05em * ${spaceMultiplier}) !important;
+          word-spacing: calc(0.1em * ${spaceMultiplier}) !important;
         }
-        p, div, span, li, h1, h2, h3, h4, h5, h6 {
-          margin-bottom: ${10 * spaceMultiplier}px !important;
+        ${blockElementsSelector} {
+          margin-bottom: calc(1em * ${spaceMultiplier}) !important;
         }
       `;
       this.injectCSS(css, id);
@@ -166,11 +168,13 @@ class AccessibilityManager {
   // 8. Highlight on Hover
   highlightOnHover(enabled) {
     const id = 'browse-easy-highlight-hover';
+    const interactiveSelector = 'a, button, input, select, textarea, [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="menuitem"], [role="tab"], [role="option"], [tabindex]';
     if (enabled) {
       const css = `
-        *:hover {
-          background-color: rgba(255, 255, 0, 0.3) !important;
-          outline: 2px solid #ff6600 !important;
+        ${interactiveSelector}:hover {
+          background-color: rgba(255, 255, 0, 0.35) !important; /* Slightly more visible */
+          outline: 2px solid #cc5200 !important; /* Darker orange */
+          box-shadow: 0 0 5px rgba(255, 255, 0, 0.5) !important;
         }
       `;
       this.injectCSS(css, id);
@@ -202,35 +206,30 @@ class AccessibilityManager {
 
   // 10. Add Tooltips
   addTooltips(enabled) {
+    const tooltipMarker = 'data-browseeasy-tooltip';
     if (enabled) {
-      document.querySelectorAll('img, button, a, input').forEach(el => {
-        if (!el.title && !el.getAttribute('aria-label')) {
+      document.querySelectorAll('img, button, a, input[type="button"], input[type="submit"], input[type="reset"], [role="button"], [role="link"]').forEach(el => {
+        if (!el.title && !el.getAttribute('aria-label') && !el.hasAttribute(tooltipMarker)) {
           let tooltip = '';
           if (el.tagName === 'IMG') {
             tooltip = el.alt || 'Image';
           } else if (el.tagName === 'A') {
             tooltip = el.textContent.trim() || el.href || 'Link';
-          } else if (el.tagName === 'BUTTON') {
-            tooltip = el.textContent.trim() || 'Button';
+          } else if (el.tagName === 'BUTTON' || el.getAttribute('role') === 'button') {
+            tooltip = el.textContent.trim() || el.getAttribute('aria-label') || 'Button';
           } else if (el.tagName === 'INPUT') {
-            tooltip = el.placeholder || el.type || 'Input field';
+            tooltip = el.placeholder || el.value || el.type || 'Input field';
           }
           if (tooltip) {
-            el.title = tooltip.substring(0, 100); // Limit tooltip length
+            el.title = tooltip.substring(0, 150); // Limit tooltip length slightly more
+            el.setAttribute(tooltipMarker, 'true');
           }
         }
       });
     } else {
-      // Remove auto-generated tooltips (this is basic - in practice we'd need to track which ones we added)
-      document.querySelectorAll('[title]').forEach(el => {
-        if (el.title.length <= 100 && (
-          el.title === 'Image' || 
-          el.title === 'Link' || 
-          el.title === 'Button' ||
-          el.title.includes('Input field')
-        )) {
-          el.removeAttribute('title');
-        }
+      document.querySelectorAll(`[${tooltipMarker}]`).forEach(el => {
+        el.removeAttribute('title');
+        el.removeAttribute(tooltipMarker);
       });
     }
   }
