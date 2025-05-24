@@ -1,16 +1,21 @@
 {
     "manifest_version": 3,
-    "name": "Chat Sidebar",
+    "name": "BrowseEasy",
     "version": "1.0",
-    "description": "A sidebar chat UI powered by an LLM API",
+    "description": "An AI-powered accessibility browser extension with chat sidebar",
     "permissions": [
-      "sidePanel"
+      "sidePanel",
+      "storage",
+      "activeTab",
+      "tabs"
     ],
     "host_permissions": [
-      "https://api.your-llm.com/*"
+      "https://generativelanguage.googleapis.com/*",
+      "http://*/*",
+      "https://*/*"
     ],
     "action": {
-      "default_title": "Open Chat Sidebar"
+      "default_title": "Open BrowseEasy"
     },
     "side_panel": {
       "default_path": "panel.html",
@@ -18,6 +23,13 @@
     },
     "background": {
       "service_worker": "background.js"
-    }
+    },
+    "content_scripts": [
+      {
+        "matches": ["http://*/*", "https://*/*"],
+        "js": ["accessibility.js", "settings.js", "content.js"],
+        "run_at": "document_idle"
+      }
+    ]
   }
   
