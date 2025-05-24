@@ -250,6 +250,55 @@ class AccessibilityManager {
     }
   }
 
+  // Helper to convert image to base64
+  getImageBase64(img) {
+    return new Promise((resolve, reject) => {
+      const imgEl = new window.Image();
+      imgEl.crossOrigin = 'Anonymous';
+      imgEl.onload = function() {
+        const canvas = document.createElement('canvas');
+        canvas.width = imgEl.width;
+        canvas.height = imgEl.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(imgEl, 0, 0);
+        resolve(canvas.toDataURL('image/png').split(',')[1]); // base64 part only
+      };
+      imgEl.onerror = reject;
+      imgEl.src = img.src;
+    });
+  }
+
+  // Generate alt text for images without alt, and return results (skipping tainted images)
+  async generateAltTextForImages() {
+    const images = Array.from(document.querySelectorAll('img'));
+    const missingAltImages = images.filter(img => !img.hasAttribute('alt') || img.alt.trim() === '');
+    const results = [];
+    const skipped = [];
+    for (const img of missingAltImages) {
+      try {
+        const base64 = await this.getImageBase64(img);
+        const altText = await new Promise((resolve, reject) => {
+          chrome.runtime.sendMessage({
+            type: 'generateAltText',
+            imgBase64: base64
+          }, (response) => {
+            if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
+            if (response && response.altText) resolve(response.altText);
+            else reject(new Error('No alt text returned'));
+          });
+        });
+        if (altText) img.alt = altText;
+        results.push({ src: img.src, alt: altText });
+      } catch (e) {
+        // Tainted image or other error
+        skipped.push(img.src);
+      }
+    }
+    // Send results and skipped to panel for chat display
+    chrome.runtime.sendMessage({ type: 'altTextResults', results, skipped });
+    return { results, skipped };
+  }
+
   // Apply all settings
   applySettings(settings) {
     if (!settings.enabled) {
@@ -318,6 +367,9 @@ class AccessibilityManager {
         break;
       case 'adjustContrast':
         this.adjustContrast(parameters.contrast);
+        break;
+      case 'generateAltTextForImages':
+        this.generateAltTextForImages();
         break;
       default:
         console.warn('Unknown accessibility function:', functionName);

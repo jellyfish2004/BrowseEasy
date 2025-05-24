@@ -1,6 +1,11 @@
 const messagesEl = document.getElementById('messages');
 const inputEl = document.getElementById('input');
 const audioModeButton = document.getElementById('audioModeButton'); // Get the new button
+const tabSwitcher = document.getElementById('tab-switcher');
+const chatTab = document.getElementById('chatTab');
+const settingsTab = document.getElementById('settingsTab');
+const messagesContainer = document.getElementById('messages');
+const settingsGrid = document.getElementById('settings-grid');
 
 let chatHistory = []; // Initialize chat history
 const MAX_HISTORY_MESSAGES = 10; // Max number of messages (user + bot) to keep, excluding system prompt & current query
@@ -63,6 +68,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Return false or nothing for synchronous message handlers or if not handling this message
   // to prevent the port from being kept open unnecessarily.
   return false; 
+});
+
+// Listen for alt text results from content script and display in chat
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'altTextResults' && Array.isArray(message.results)) {
+    let summary = '<strong>Generated Alt Texts for Images:</strong><br><ul>';
+    message.results.forEach(({src, alt}) => {
+      summary += `<li><code>${src}</code><br><em>${alt}</em></li>`;
+    });
+    if (Array.isArray(message.skipped) && message.skipped.length > 0) {
+      summary += `<br><strong>Skipped (CORS/tainted):</strong><ul>`;
+      message.skipped.forEach(src => {
+        summary += `<li><code>${src}</code></li>`;
+      });
+      summary += '</ul>';
+    }
+    append('bot', summary);
+  }
 });
 
 inputEl.addEventListener('keydown', async e => {
@@ -256,4 +279,127 @@ function append(type, text) {
 // Add some quick accessibility commands
 document.addEventListener('DOMContentLoaded', () => {
   append('bot', '👋 Hi! I\'m BrowseEasy, your accessibility assistant. I can help make web pages easier to read and navigate. Try saying:\n\n• "Make this more readable"\n• "Highlight the links"\n• "Make the text bigger"\n• "Hide images"\n• "Make buttons larger"\n\nWhat would you like me to help with?');
+});
+
+// Tab switching logic
+chatTab.addEventListener('click', () => {
+  chatTab.classList.add('active');
+  settingsTab.classList.remove('active');
+  messagesContainer.style.display = '';
+  document.getElementById('input-area').style.display = '';
+  settingsGrid.style.display = 'none';
+});
+settingsTab.addEventListener('click', () => {
+  chatTab.classList.remove('active');
+  settingsTab.classList.add('active');
+  messagesContainer.style.display = 'none';
+  document.getElementById('input-area').style.display = 'none';
+  settingsGrid.style.display = 'grid';
+});
+
+// Settings grid rendering
+const TOOL_ICONS = {
+  highlightLinks: '🔗',
+  dyslexiaFriendly: '📖',
+  scaleWebsite: '🔍',
+  hideImages: '🚫',
+  adjustCursorSize: '🖱️',
+  muteSound: '🔇',
+  adjustTextSpacing: '↔️',
+  highlightOnHover: '🖍️',
+  enlargeButtons: '⬆️',
+  addTooltips: '💡',
+  adjustContrast: '🌗'
+};
+
+// Friendly labels for each tool
+const TOOL_LABELS = {
+  highlightLinks: 'Highlight Links',
+  dyslexiaFriendly: 'Dyslexia-Friendly Text',
+  scaleWebsite: 'Scale Website',
+  hideImages: 'Hide Images',
+  adjustCursorSize: 'Big Cursor',
+  muteSound: 'Mute All Sound',
+  adjustTextSpacing: 'Adjust Text Spacing',
+  highlightOnHover: 'Highlight on Hover',
+  enlargeButtons: 'Enlarge Buttons',
+  addTooltips: 'Add Tooltips',
+  adjustContrast: 'Adjust Contrast',
+  generateAltTextForImages: 'Generate Alt Text'
+};
+
+function renderSettingsGrid(settings) {
+  settingsGrid.innerHTML = '';
+  ACCESSIBILITY_TOOLS.forEach((tool, idx) => {
+    const icon = TOOL_ICONS[tool.name] || '⚙️';
+    const isToggle = tool.parameters.properties.enabled !== undefined;
+    let isActive = false;
+    if (isToggle) {
+      isActive = !!settings[tool.name];
+    }
+    const div = document.createElement('div');
+    const colorClass = `color-${idx % 10}`;
+    div.className = 'settings-icon ' + colorClass + (isActive ? ' active' : '');
+    div.title = tool.description;
+    const label = TOOL_LABELS[tool.name] || tool.description;
+    div.innerHTML = `<span>${icon}</span><span class=\"settings-label\">${label}</span>`;
+    div.addEventListener('click', async () => {
+      if (tool.name === 'generateAltTextForImages') {
+        div.innerHTML = `<span>⏳</span><span class='settings-label'>Generating...</span>`;
+        await executeAccessibilityTool('generateAltTextForImages', {});
+        div.innerHTML = `<span>${icon}</span><span class='settings-label'>Done!</span>`;
+        setTimeout(() => renderSettingsGrid(settings), 1200);
+        return;
+      }
+      if (isToggle) {
+        // Toggle boolean
+        const newValue = !settings[tool.name];
+        await executeAccessibilityTool(tool.name, { enabled: newValue });
+        settings[tool.name] = newValue;
+        renderSettingsGrid(settings);
+      } else if (tool.parameters.properties.scale) {
+        // Prompt for scale value
+        const scale = prompt('Enter scale (50-300):', settings.websiteScale || 100);
+        if (scale) {
+          await executeAccessibilityTool('scaleWebsite', { scale: Number(scale) });
+          settings.websiteScale = Number(scale);
+          renderSettingsGrid(settings);
+        }
+      } else if (tool.parameters.properties.size) {
+        const size = prompt('Enter cursor size (50-300):', settings.cursorSize || 100);
+        if (size) {
+          await executeAccessibilityTool('adjustCursorSize', { size: Number(size) });
+          settings.cursorSize = Number(size);
+          renderSettingsGrid(settings);
+        }
+      } else if (tool.parameters.properties.spacing) {
+        const spacing = prompt('Enter text spacing (50-300):', settings.textSpacing || 100);
+        if (spacing) {
+          await executeAccessibilityTool('adjustTextSpacing', { spacing: Number(spacing) });
+          settings.textSpacing = Number(spacing);
+          renderSettingsGrid(settings);
+        }
+      } else if (tool.parameters.properties.contrast) {
+        const contrast = prompt('Enter contrast (50-300):', settings.adjustContrast || 100);
+        if (contrast) {
+          await executeAccessibilityTool('adjustContrast', { contrast: Number(contrast) });
+          settings.adjustContrast = Number(contrast);
+          renderSettingsGrid(settings);
+        }
+      }
+    });
+    settingsGrid.appendChild(div);
+  });
+}
+
+// Load settings and render grid on startup
+window.addEventListener('DOMContentLoaded', async () => {
+  let settings = {};
+  if (window.SettingsManager) {
+    const mgr = new window.SettingsManager();
+    settings = await mgr.loadSettings();
+  } else if (window.DEFAULT_SETTINGS) {
+    settings = { ...window.DEFAULT_SETTINGS };
+  }
+  renderSettingsGrid(settings);
 });

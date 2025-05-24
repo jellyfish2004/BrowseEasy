@@ -65,6 +65,40 @@
       color: var(--primary-color);
     }
 
+    #tab-switcher {
+      display: flex;
+      justify-content: center;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--app-bg);
+    }
+    .tab {
+      flex: 1;
+      padding: 10px 0;
+      background: none;
+      border: none;
+      font-size: 0.92em; /* Smaller text */
+      color: var(--primary-color);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: border-color 0.2s, background 0.2s, color 0.2s;
+    }
+    .tab#chatTab {
+      color: #1976d2;
+    }
+    .tab#settingsTab {
+      color: #388e3c;
+    }
+    .tab.active#chatTab {
+      border-bottom: 2.5px solid #1976d2;
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+    .tab.active#settingsTab {
+      border-bottom: 2.5px solid #388e3c;
+      background: #e8f5e9;
+      color: #388e3c;
+    }
+
     #messages {
       flex-grow: 1;
       overflow-y: auto;
@@ -174,6 +208,56 @@
     .tool-failure {
       color: #d93025; /* Darker Red for failure */
     }
+
+    #settings-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      padding: 24px 16px 0 16px;
+      flex-grow: 1;
+      overflow-y: auto;
+      background: #f3f7fa; /* Nice pastel background for settings tab */
+      border-radius: 0 0 18px 18px;
+    }
+    .settings-icon {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #f8f9fa;
+      border-radius: 12px;
+      border: 1px solid #e0e0e0;
+      padding: 18px 8px 10px 8px;
+      cursor: pointer;
+      transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
+      min-height: 90px;
+      min-width: 80px;
+      font-size: 1.2em; /* Smaller overall */
+      color: var(--primary-color);
+    }
+    .settings-icon .settings-label {
+      margin-top: 8px;
+      font-size: 0.85em;
+      color: var(--text-secondary);
+      text-align: center;
+      word-break: break-word;
+    }
+    .settings-icon.active {
+      background: var(--hover-bg);
+      border-color: var(--primary-color);
+      box-shadow: 0 2px 8px rgba(26,115,232,0.08);
+    }
+    /* Fun color backgrounds for each button (cycle through) */
+    .settings-icon.color-0 { background: #e3f2fd; }
+    .settings-icon.color-1 { background: #fce4ec; }
+    .settings-icon.color-2 { background: #e8f5e9; }
+    .settings-icon.color-3 { background: #fff3e0; }
+    .settings-icon.color-4 { background: #f3e5f5; }
+    .settings-icon.color-5 { background: #f9fbe7; }
+    .settings-icon.color-6 { background: #e0f7fa; }
+    .settings-icon.color-7 { background: #fbe9e7; }
+    .settings-icon.color-8 { background: #ede7f6; }
+    .settings-icon.color-9 { background: #f1f8e9; }
   </style>
 </head>
 <body>
@@ -181,7 +265,12 @@
     <h1>BrowseEasy</h1>
     <button id="audioModeButton" title="Switch to Audio Input">🎙️</button>
   </div>
+  <div id="tab-switcher">
+    <button id="chatTab" class="tab active">Chat</button>
+    <button id="settingsTab" class="tab">Settings</button>
+  </div>
   <div id="messages"></div>
+  <div id="settings-grid" style="display:none;"></div>
   <div id="input-area">
     <input id="input" type="text" placeholder="Ask me anything...">
     <!-- Consider adding a send button here in the future -->
