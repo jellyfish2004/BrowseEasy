@@ -233,6 +233,28 @@
       } else {
         return 'Accessibility manager not initialized';
       }
+    },
+    getAppliedStyles: () => {
+      if (accessibilityManager) {
+        return accessibilityManager.getAppliedStyles();
+      } else {
+        return { error: 'Accessibility manager not initialized' };
+      }
+    },
+    forceCleanup: () => {
+      if (accessibilityManager) {
+        accessibilityManager.forceCleanup();
+        return 'Force cleanup completed';
+      } else {
+        return 'Accessibility manager not initialized';
+      }
+    },
+    getCurrentSettings: () => {
+      if (settingsManager) {
+        return settingsManager.getAllSettings();
+      } else {
+        return { error: 'Settings manager not initialized' };
+      }
     }
   };
 

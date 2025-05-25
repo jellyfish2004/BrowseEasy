@@ -10,6 +10,52 @@ const settingsGrid = document.getElementById('settings-grid');
 let chatHistory = []; // Initialize chat history
 const MAX_HISTORY_MESSAGES = 10; // Max number of messages (user + bot) to keep, excluding system prompt & current query
 
+// Theme switching functionality
+const themeButtons = document.querySelectorAll('.theme-btn');
+let currentTheme = 'light'; // Default theme
+
+// Load saved theme preference
+async function loadTheme() {
+  try {
+    const result = await chrome.storage.sync.get('browseEasyTheme');
+    const savedTheme = result.browseEasyTheme || 'light';
+    setTheme(savedTheme);
+  } catch (error) {
+    console.error('Failed to load theme:', error);
+    setTheme('light'); // Fallback to light theme
+  }
+}
+
+// Set theme and update UI
+function setTheme(theme) {
+  currentTheme = theme;
+  document.body.setAttribute('data-theme', theme);
+  
+  // Update active button
+  themeButtons.forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.getAttribute('data-theme') === theme) {
+      btn.classList.add('active');
+    }
+  });
+  
+  // Save theme preference
+  chrome.storage.sync.set({ browseEasyTheme: theme }).catch(error => {
+    console.error('Failed to save theme:', error);
+  });
+}
+
+// Add event listeners for theme buttons
+themeButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    const theme = button.getAttribute('data-theme');
+    setTheme(theme);
+  });
+});
+
+// Load theme on startup
+loadTheme();
+
 // Listener for the new audio mode button
 if (audioModeButton) {
   audioModeButton.addEventListener('click', () => {

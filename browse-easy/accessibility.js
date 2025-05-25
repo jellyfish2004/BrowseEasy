@@ -168,13 +168,51 @@ class AccessibilityManager {
   // 8. Highlight on Hover
   highlightOnHover(enabled) {
     const id = 'browse-easy-highlight-hover';
-    const interactiveSelector = 'a, button, input, select, textarea, [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="menuitem"], [role="tab"], [role="option"], [tabindex]';
     if (enabled) {
+      // Simple, reliable CSS that only applies on hover
       const css = `
-        ${interactiveSelector}:hover {
-          background-color: rgba(255, 255, 0, 0.35) !important; /* Slightly more visible */
-          outline: 2px solid #cc5200 !important; /* Darker orange */
-          box-shadow: 0 0 5px rgba(255, 255, 0, 0.5) !important;
+        /* Interactive elements - ONLY on hover */
+        a:not([href=""]):not([href="#"]):hover,
+        button:not([disabled]):hover,
+        input:not([disabled]):not([type="hidden"]):hover,
+        select:not([disabled]):hover,
+        textarea:not([disabled]):hover,
+        [role="button"]:not([aria-disabled="true"]):hover,
+        [role="link"]:not([aria-disabled="true"]):hover,
+        [role="checkbox"]:not([aria-disabled="true"]):hover,
+        [role="radio"]:not([aria-disabled="true"]):hover,
+        [role="menuitem"]:not([aria-disabled="true"]):hover,
+        [role="tab"]:not([aria-disabled="true"]):hover,
+        [role="option"]:not([aria-disabled="true"]):hover,
+        [tabindex]:not([tabindex="-1"]):not([disabled]):hover {
+          background-color: rgba(0, 150, 255, 0.2) !important;
+          outline: 2px dashed #0096ff !important;
+          outline-offset: 3px !important;
+          box-shadow: 0 0 10px rgba(0, 150, 255, 0.4) !important;
+          border-radius: 6px !important;
+          transition: all 0.15s ease-in-out !important;
+          position: relative !important;
+          z-index: 10000 !important;
+        }
+        
+        /* Special handling for links on hover */
+        a:not([href=""]):not([href="#"]):hover {
+          background-color: rgba(0, 150, 255, 0.25) !important;
+          color: #003d82 !important;
+          text-decoration: underline !important;
+          text-decoration-color: #0096ff !important;
+          text-decoration-thickness: 2px !important;
+          border: none !important;
+        }
+        
+        /* Special handling for buttons on hover */
+        button:not([disabled]):hover,
+        input[type="button"]:not([disabled]):hover,
+        input[type="submit"]:not([disabled]):hover,
+        input[type="reset"]:not([disabled]):hover,
+        [role="button"]:not([aria-disabled="true"]):hover {
+          transform: scale(1.03) !important;
+          background-color: rgba(0, 150, 255, 0.15) !important;
         }
       `;
       this.injectCSS(css, id);
@@ -330,6 +368,49 @@ class AccessibilityManager {
     document.querySelectorAll('audio, video').forEach(el => {
       el.muted = false;
     });
+    
+    // Remove any tooltips we added
+    document.querySelectorAll('[data-browseeasy-tooltip]').forEach(el => {
+      el.removeAttribute('title');
+      el.removeAttribute('data-browseeasy-tooltip');
+    });
+  }
+
+  // Debug function to check what styles are currently applied
+  getAppliedStyles() {
+    return {
+      appliedStyleIds: [...this.appliedStyles],
+      activeStyleElements: this.appliedStyles.map(id => {
+        const element = document.getElementById(id);
+        return {
+          id: id,
+          exists: !!element,
+          content: element ? element.textContent.substring(0, 100) + '...' : null
+        };
+      }),
+      observersCount: this.observers.length
+    };
+  }
+
+  // Force remove all BrowseEasy styles (emergency cleanup)
+  forceCleanup() {
+    // Remove all style elements with BrowseEasy IDs
+    document.querySelectorAll('style[id*="browse-easy"]').forEach(style => {
+      style.remove();
+    });
+    
+    // Clear our tracking arrays
+    this.appliedStyles = [];
+    this.observers.forEach(observer => observer.disconnect());
+    this.observers = [];
+    
+    // Remove tooltips
+    document.querySelectorAll('[data-browseeasy-tooltip]').forEach(el => {
+      el.removeAttribute('title');
+      el.removeAttribute('data-browseeasy-tooltip');
+    });
+    
+    console.log('[BrowseEasy] Force cleanup completed');
   }
 
   // Tool calling interface for AI integration

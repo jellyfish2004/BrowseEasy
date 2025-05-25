@@ -8,29 +8,75 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary-color: #1a73e8; /* Google Blue */
+      /* Light Theme (Default) */
+      --primary-color: #1a73e8;
       --user-msg-bg: #1a73e8;
       --user-msg-text: #ffffff;
-      --bot-msg-bg: #f1f3f4; /* Light gray, similar to Google UIs */
-      --bot-msg-text: #202124; /* Dark gray for text */
-      --error-msg-bg: #fce8e6; /* Light red */
-      --error-msg-text: #c5221f; /* Darker red */
+      --bot-msg-bg: #f1f3f4;
+      --bot-msg-text: #202124;
+      --error-msg-bg: #fce8e6;
+      --error-msg-text: #c5221f;
       --app-bg: #ffffff;
       --border-color: #dadce0;
-      --hover-bg: #e8f0fe; /* Light blue for hover */
+      --hover-bg: #e8f0fe;
       --text-primary: #202124;
       --text-secondary: #5f6368;
+      --input-bg: #ffffff;
+      --settings-bg: #f3f7fa;
+      --settings-icon-bg: #f8f9fa;
+      --settings-icon-border: #e0e0e0;
+    }
+
+    /* Dark Theme */
+    [data-theme="dark"] {
+      --primary-color: #4285f4;
+      --user-msg-bg: #4285f4;
+      --user-msg-text: #ffffff;
+      --bot-msg-bg: #2d2d2d;
+      --bot-msg-text: #e8eaed;
+      --error-msg-bg: #5f2120;
+      --error-msg-text: #f28b82;
+      --app-bg: #1a1a1a;
+      --border-color: #3c4043;
+      --hover-bg: #2d3748;
+      --text-primary: #e8eaed;
+      --text-secondary: #9aa0a6;
+      --input-bg: #2d2d2d;
+      --settings-bg: #202124;
+      --settings-icon-bg: #2d2d2d;
+      --settings-icon-border: #3c4043;
+    }
+
+    /* High Contrast Theme */
+    [data-theme="high-contrast"] {
+      --primary-color: #0066cc;
+      --user-msg-bg: #0066cc;
+      --user-msg-text: #ffffff;
+      --bot-msg-bg: #ffffff;
+      --bot-msg-text: #000000;
+      --error-msg-bg: #ffcccc;
+      --error-msg-text: #cc0000;
+      --app-bg: #ffffff;
+      --border-color: #000000;
+      --hover-bg: #e6f3ff;
+      --text-primary: #000000;
+      --text-secondary: #333333;
+      --input-bg: #ffffff;
+      --settings-bg: #f0f0f0;
+      --settings-icon-bg: #ffffff;
+      --settings-icon-border: #000000;
     }
 
     body {
       font-family: 'Roboto', sans-serif;
       margin: 0;
-      width: 380px; /* Slightly wider for better spacing */
+      width: 380px;
       display: flex;
       flex-direction: column;
       height: 100vh; 
       background-color: var(--app-bg);
       color: var(--text-primary);
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
 
     #app-bar {
@@ -46,22 +92,61 @@
 
     #app-bar h1 {
       margin: 0;
-      font-size: 1.25em; /* Larger title */
+      font-size: 1.25em;
       font-weight: 500;
+    }
+
+    #app-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #theme-buttons {
+      display: flex;
+      gap: 4px;
+      margin-right: 8px;
+    }
+
+    .theme-btn {
+      background: none;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-size: 0.75em;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 12px;
+      transition: all 0.2s ease-in-out;
+      min-width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .theme-btn:hover {
+      background-color: var(--hover-bg);
+      border-color: var(--primary-color);
+    }
+
+    .theme-btn.active {
+      background-color: var(--primary-color);
+      color: #ffffff;
+      border-color: var(--primary-color);
     }
 
     #audioModeButton {
       background: none;
       border: none;
       color: var(--text-secondary);
-      font-size: 1.5em; /* Larger icon */
+      font-size: 1.5em;
       cursor: pointer;
       padding: 8px;
       border-radius: 50%;
       transition: background-color 0.2s ease-in-out;
     }
     #audioModeButton:hover {
-      background-color: var(--bot-msg-bg); /* Consistent hover with bot messages */
+      background-color: var(--hover-bg);
       color: var(--primary-color);
     }
 
@@ -76,7 +161,7 @@
       padding: 10px 0;
       background: none;
       border: none;
-      font-size: 0.92em; /* Smaller text */
+      font-size: 0.92em;
       color: var(--primary-color);
       cursor: pointer;
       border-bottom: 2px solid transparent;
@@ -99,6 +184,24 @@
       color: #388e3c;
     }
 
+    /* Dark theme tab adjustments */
+    [data-theme="dark"] .tab.active#chatTab {
+      background: #1e3a5f;
+    }
+    [data-theme="dark"] .tab.active#settingsTab {
+      background: #1e3a2e;
+    }
+
+    /* High contrast tab adjustments */
+    [data-theme="high-contrast"] .tab.active#chatTab {
+      background: #e6f3ff;
+      color: #0066cc;
+    }
+    [data-theme="high-contrast"] .tab.active#settingsTab {
+      background: #e6ffe6;
+      color: #006600;
+    }
+
     #messages {
       flex-grow: 1;
       overflow-y: auto;
@@ -111,7 +214,7 @@
     .message {
       padding: 10px 14px;
       border-radius: 18px;
-      max-width: 80%; /* Slightly less for balance */
+      max-width: 80%;
       word-wrap: break-word;
       line-height: 1.5;
       font-size: 0.95em;
@@ -121,7 +224,7 @@
       background-color: var(--user-msg-bg);
       color: var(--user-msg-text);
       align-self: flex-end;
-      border-bottom-right-radius: 6px; /* Slightly adjusted for a modern feel */
+      border-bottom-right-radius: 6px;
     }
 
     .bot {
@@ -148,7 +251,7 @@
 
     #input-area {
       display: flex;
-      align-items: center; /* Align button with input */
+      align-items: center;
       padding: 12px 16px;
       border-top: 1px solid var(--border-color);
       background-color: var(--app-bg);
@@ -157,13 +260,13 @@
 
     #input {
       flex-grow: 1;
-      padding: 12px 16px; /* Increased padding */
+      padding: 12px 16px;
       border: 1px solid var(--border-color);
-      border-radius: 24px; /* More rounded */
+      border-radius: 24px;
       margin-right: 8px;
       font-size: 0.95em;
       font-family: 'Roboto', sans-serif;
-      background-color: #fff;
+      background-color: var(--input-bg);
       color: var(--text-primary);
       transition: border-color 0.2s, box-shadow 0.2s;
     }
@@ -173,17 +276,16 @@
       box-shadow: 0 0 0 2px var(--hover-bg);
     }
     #input:disabled {
-      background-color: #f8f9fa;
+      background-color: var(--settings-icon-bg);
       cursor: not-allowed;
     }
 
-    /* Styles for the applied tools summary (ensure they fit the new design) */
     .applied-tools-summary {
       margin-top: 12px;
       padding: 10px 12px;
-      background-color: #e8f0fe; /* Light blue, distinct */
+      background-color: var(--hover-bg);
       border-radius: 12px;
-      border: 1px solid #d2e3fc;
+      border: 1px solid var(--border-color);
     }
     .applied-tools-summary h4 {
       margin-top: 0;
@@ -203,10 +305,18 @@
       color: var(--text-secondary);
     }
     .tool-success {
-      color: #1e8e3e; /* Darker Green for success */
+      color: #1e8e3e;
     }
     .tool-failure {
-      color: #d93025; /* Darker Red for failure */
+      color: #d93025;
+    }
+
+    /* Dark theme tool colors */
+    [data-theme="dark"] .tool-success {
+      color: #81c995;
+    }
+    [data-theme="dark"] .tool-failure {
+      color: #f28b82;
     }
 
     #settings-grid {
@@ -216,7 +326,7 @@
       padding: 24px 16px 0 16px;
       flex-grow: 1;
       overflow-y: auto;
-      background: #f3f7fa; /* Nice pastel background for settings tab */
+      background: var(--settings-bg);
       border-radius: 0 0 18px 18px;
     }
     .settings-icon {
@@ -224,15 +334,15 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: #f8f9fa;
+      background: var(--settings-icon-bg);
       border-radius: 12px;
-      border: 1px solid #e0e0e0;
+      border: 1px solid var(--settings-icon-border);
       padding: 18px 8px 10px 8px;
       cursor: pointer;
       transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
       min-height: 90px;
       min-width: 80px;
-      font-size: 1.2em; /* Smaller overall */
+      font-size: 1.2em;
       color: var(--primary-color);
     }
     .settings-icon .settings-label {
@@ -247,8 +357,9 @@
       border-color: var(--primary-color);
       box-shadow: 0 2px 8px rgba(26,115,232,0.08);
     }
-    /* Fun color backgrounds for each button (cycle through) */
-    .settings-icon.color-0 { background: #e3f2fd; }
+
+    /* Theme-aware color backgrounds for settings icons */
+    .settings-icon.color-0 { background: var(--hover-bg); }
     .settings-icon.color-1 { background: #fce4ec; }
     .settings-icon.color-2 { background: #e8f5e9; }
     .settings-icon.color-3 { background: #fff3e0; }
@@ -258,12 +369,45 @@
     .settings-icon.color-7 { background: #fbe9e7; }
     .settings-icon.color-8 { background: #ede7f6; }
     .settings-icon.color-9 { background: #f1f8e9; }
+
+    /* Dark theme color adjustments */
+    [data-theme="dark"] .settings-icon.color-1 { background: #4a2c35; }
+    [data-theme="dark"] .settings-icon.color-2 { background: #2d4a32; }
+    [data-theme="dark"] .settings-icon.color-3 { background: #4a3d2c; }
+    [data-theme="dark"] .settings-icon.color-4 { background: #3d2c4a; }
+    [data-theme="dark"] .settings-icon.color-5 { background: #4a4a2c; }
+    [data-theme="dark"] .settings-icon.color-6 { background: #2c4a4a; }
+    [data-theme="dark"] .settings-icon.color-7 { background: #4a352c; }
+    [data-theme="dark"] .settings-icon.color-8 { background: #3d2c4a; }
+    [data-theme="dark"] .settings-icon.color-9 { background: #354a2c; }
+
+    /* High contrast theme - simpler colors */
+    [data-theme="high-contrast"] .settings-icon.color-0,
+    [data-theme="high-contrast"] .settings-icon.color-1,
+    [data-theme="high-contrast"] .settings-icon.color-2,
+    [data-theme="high-contrast"] .settings-icon.color-3,
+    [data-theme="high-contrast"] .settings-icon.color-4,
+    [data-theme="high-contrast"] .settings-icon.color-5,
+    [data-theme="high-contrast"] .settings-icon.color-6,
+    [data-theme="high-contrast"] .settings-icon.color-7,
+    [data-theme="high-contrast"] .settings-icon.color-8,
+    [data-theme="high-contrast"] .settings-icon.color-9 {
+      background: var(--settings-icon-bg);
+      border: 2px solid var(--border-color);
+    }
   </style>
 </head>
 <body>
   <div id="app-bar">
     <h1>BrowseEasy</h1>
-    <button id="audioModeButton" title="Switch to Audio Input">🎙️</button>
+    <div id="app-controls">
+      <div id="theme-buttons">
+        <button class="theme-btn active" data-theme="light" title="Light Theme">☀️</button>
+        <button class="theme-btn" data-theme="dark" title="Dark Theme">🌙</button>
+        <button class="theme-btn" data-theme="high-contrast" title="High Contrast">⚫</button>
+      </div>
+      <button id="audioModeButton" title="Switch to Audio Input">🎙️</button>
+    </div>
   </div>
   <div id="tab-switcher">
     <button id="chatTab" class="tab active">Chat</button>
@@ -273,7 +417,6 @@
   <div id="settings-grid" style="display:none;"></div>
   <div id="input-area">
     <input id="input" type="text" placeholder="Ask me anything...">
-    <!-- Consider adding a send button here in the future -->
   </div>
   <script src="config.js"></script>
   <script src="tools.js"></script>
