@@ -38,26 +38,6 @@ go to chrome://extensions -> load unpacked -> select browse-easy folder
 - **AI-Applied Settings**: Settings applied through AI chat are automatically saved
 - **Page Reload**: Settings are automatically reapplied when pages are refreshed or new pages are loaded
 
-#### How Settings Persistence Works
-1. **Settings Storage**: All settings are stored using Chrome's sync storage API
-2. **Auto-Application**: When a webpage loads, saved settings are automatically applied
-3. **Real-Time Sync**: Changes made in one tab are immediately applied to all other tabs
-4. **Persistent State**: The Settings tab always shows the current saved state of all features
-
-#### Testing Settings Persistence
-Use the included test page to verify settings persistence:
-1. Open `test-persistence.html` in your browser
-2. Enable some accessibility features through the extension panel
-3. Refresh the page - settings should persist and be automatically applied
-4. Open the same page in a new tab - settings should apply there too
-
-#### Testing Hover Highlighting
-Use the dedicated hover test page to verify the hover highlighting feature:
-1. Open `test-hover.html` in your browser
-2. Enable "Highlight on Hover" through the extension panel
-3. Hover over interactive elements - they should highlight with yellow background and orange outline
-4. Non-interactive elements (disabled buttons, empty links, regular text) should NOT highlight
-
 ## Usage
 
 ### AI Assistant
