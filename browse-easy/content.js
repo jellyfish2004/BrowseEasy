@@ -77,6 +77,16 @@
         accessibilityManager.applySettings(settings);
       });
       
+      // Listen for storage changes to sync settings across tabs
+      chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (namespace === 'sync' && changes.browseEasySettings) {
+          log('Storage changed, updating settings:', changes.browseEasySettings.newValue);
+          if (changes.browseEasySettings.newValue) {
+            accessibilityManager.applySettings(changes.browseEasySettings.newValue);
+          }
+        }
+      });
+      
       // Signal that we're ready
       if (chrome.runtime && chrome.runtime.sendMessage) {
         try {
@@ -139,6 +149,9 @@
         case 'updateSettings':
           log('Updating multiple settings:', message.settings);
           settingsManager.saveSettings(message.settings).then(() => {
+            // Apply the updated settings to the accessibility manager
+            const allSettings = settingsManager.getAllSettings();
+            accessibilityManager.applySettings(allSettings);
             sendResponse({ success: true });
           }).catch(err => {
             error('Failed to update settings:', err);

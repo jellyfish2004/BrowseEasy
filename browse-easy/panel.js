@@ -213,6 +213,10 @@ User request: ${userMessage}`;
           functionCall.functionCall.name,
           functionCall.functionCall.args
         );
+        
+        // Save settings when tools are executed via AI chat
+        await saveSettingsFromToolExecution(functionCall.functionCall.name, functionCall.functionCall.args);
+        
         toolResults.push({
           name: functionCall.functionCall.name,
           success: true,
@@ -237,6 +241,9 @@ User request: ${userMessage}`;
         }
       });
       appliedToolsHtml += '</ul></div>';
+      
+      // Re-render settings grid to reflect changes
+      renderSettingsGrid(currentSettings);
     }
 
     // Construct botResponseText for display
@@ -289,12 +296,36 @@ chatTab.addEventListener('click', () => {
   document.getElementById('input-area').style.display = '';
   settingsGrid.style.display = 'none';
 });
-settingsTab.addEventListener('click', () => {
+settingsTab.addEventListener('click', async () => {
   chatTab.classList.remove('active');
   settingsTab.classList.add('active');
   messagesContainer.style.display = 'none';
   document.getElementById('input-area').style.display = 'none';
   settingsGrid.style.display = 'grid';
+  
+  // Refresh settings from storage when opening settings tab
+  try {
+    const result = await chrome.storage.sync.get('browseEasySettings');
+    const defaultSettings = {
+      highlightLinks: false,
+      dyslexiaFriendly: false,
+      websiteScale: 100,
+      hideImages: false,
+      cursorSize: 100,
+      muteSound: false,
+      textSpacing: 100,
+      highlightOnHover: false,
+      enlargeButtons: false,
+      addTooltips: false,
+      adjustContrast: 100,
+      enabled: true
+    };
+    
+    currentSettings = { ...defaultSettings, ...result.browseEasySettings };
+    renderSettingsGrid(currentSettings);
+  } catch (error) {
+    console.error('Failed to refresh settings:', error);
+  }
 });
 
 // Settings grid rendering
@@ -328,7 +359,99 @@ const TOOL_LABELS = {
   generateAltTextForImages: 'Generate Alt Text'
 };
 
+// Global settings object to track current state
+let currentSettings = {};
+
+// Function to save settings to storage and apply to current page
+async function saveAndApplySettings(newSettings) {
+  try {
+    // Update current settings
+    currentSettings = { ...currentSettings, ...newSettings };
+    
+    // Save to storage
+    await chrome.storage.sync.set({ browseEasySettings: currentSettings });
+    
+    // Apply to current page via content script
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tabs[0]) {
+      try {
+        await chrome.tabs.sendMessage(tabs[0].id, {
+          type: 'updateSettings',
+          settings: newSettings
+        });
+      } catch (error) {
+        console.log('Could not apply settings to current page:', error.message);
+      }
+    }
+    
+    return currentSettings;
+  } catch (error) {
+    console.error('Failed to save settings:', error);
+    throw error;
+  }
+}
+
+// Function to save settings when tools are executed via AI chat
+async function saveSettingsFromToolExecution(toolName, parameters) {
+  try {
+    let newSettings = {};
+    
+    // Map tool executions to settings updates
+    switch (toolName) {
+      case 'highlightLinks':
+        newSettings.highlightLinks = parameters.enabled;
+        break;
+      case 'dyslexiaFriendly':
+        newSettings.dyslexiaFriendly = parameters.enabled;
+        break;
+      case 'scaleWebsite':
+        newSettings.websiteScale = parameters.scale;
+        break;
+      case 'hideImages':
+        newSettings.hideImages = parameters.enabled;
+        break;
+      case 'adjustCursorSize':
+        newSettings.cursorSize = parameters.size;
+        break;
+      case 'muteSound':
+        newSettings.muteSound = parameters.enabled;
+        break;
+      case 'adjustTextSpacing':
+        newSettings.textSpacing = parameters.spacing;
+        break;
+      case 'highlightOnHover':
+        newSettings.highlightOnHover = parameters.enabled;
+        break;
+      case 'enlargeButtons':
+        newSettings.enlargeButtons = parameters.enabled;
+        break;
+      case 'addTooltips':
+        newSettings.addTooltips = parameters.enabled;
+        break;
+      case 'adjustContrast':
+        newSettings.adjustContrast = parameters.contrast;
+        break;
+      // generateAltTextForImages doesn't need to be saved as a setting
+      default:
+        return; // No settings to save for this tool
+    }
+    
+    if (Object.keys(newSettings).length > 0) {
+      // Update current settings
+      currentSettings = { ...currentSettings, ...newSettings };
+      
+      // Save to storage
+      await chrome.storage.sync.set({ browseEasySettings: currentSettings });
+      
+      console.log('Settings saved from AI tool execution:', newSettings);
+    }
+  } catch (error) {
+    console.error('Failed to save settings from tool execution:', error);
+  }
+}
+
 function renderSettingsGrid(settings) {
+  currentSettings = { ...settings }; // Update current settings reference
   settingsGrid.innerHTML = '';
   ACCESSIBILITY_TOOLS.forEach((tool, idx) => {
     const icon = TOOL_ICONS[tool.name] || '⚙️';
@@ -348,43 +471,71 @@ function renderSettingsGrid(settings) {
         div.innerHTML = `<span>⏳</span><span class='settings-label'>Generating...</span>`;
         await executeAccessibilityTool('generateAltTextForImages', {});
         div.innerHTML = `<span>${icon}</span><span class='settings-label'>Done!</span>`;
-        setTimeout(() => renderSettingsGrid(settings), 1200);
+        setTimeout(() => renderSettingsGrid(currentSettings), 1200);
         return;
       }
       if (isToggle) {
         // Toggle boolean
         const newValue = !settings[tool.name];
-        await executeAccessibilityTool(tool.name, { enabled: newValue });
-        settings[tool.name] = newValue;
-        renderSettingsGrid(settings);
+        const newSettings = { [tool.name]: newValue };
+        
+        // Save and apply settings
+        await saveAndApplySettings(newSettings);
+        
+        // Re-render grid with updated settings
+        renderSettingsGrid(currentSettings);
       } else if (tool.parameters.properties.scale) {
         // Prompt for scale value
         const scale = prompt('Enter scale (50-300):', settings.websiteScale || 100);
-        if (scale) {
-          await executeAccessibilityTool('scaleWebsite', { scale: Number(scale) });
-          settings.websiteScale = Number(scale);
-          renderSettingsGrid(settings);
+        if (scale && !isNaN(scale)) {
+          const scaleValue = Math.max(50, Math.min(300, Number(scale)));
+          const newSettings = { websiteScale: scaleValue };
+          
+          // Save and apply settings
+          await saveAndApplySettings(newSettings);
+          await executeAccessibilityTool('scaleWebsite', { scale: scaleValue });
+          
+          // Re-render grid with updated settings
+          renderSettingsGrid(currentSettings);
         }
       } else if (tool.parameters.properties.size) {
         const size = prompt('Enter cursor size (50-300):', settings.cursorSize || 100);
-        if (size) {
-          await executeAccessibilityTool('adjustCursorSize', { size: Number(size) });
-          settings.cursorSize = Number(size);
-          renderSettingsGrid(settings);
+        if (size && !isNaN(size)) {
+          const sizeValue = Math.max(50, Math.min(300, Number(size)));
+          const newSettings = { cursorSize: sizeValue };
+          
+          // Save and apply settings
+          await saveAndApplySettings(newSettings);
+          await executeAccessibilityTool('adjustCursorSize', { size: sizeValue });
+          
+          // Re-render grid with updated settings
+          renderSettingsGrid(currentSettings);
         }
       } else if (tool.parameters.properties.spacing) {
         const spacing = prompt('Enter text spacing (50-300):', settings.textSpacing || 100);
-        if (spacing) {
-          await executeAccessibilityTool('adjustTextSpacing', { spacing: Number(spacing) });
-          settings.textSpacing = Number(spacing);
-          renderSettingsGrid(settings);
+        if (spacing && !isNaN(spacing)) {
+          const spacingValue = Math.max(50, Math.min(300, Number(spacing)));
+          const newSettings = { textSpacing: spacingValue };
+          
+          // Save and apply settings
+          await saveAndApplySettings(newSettings);
+          await executeAccessibilityTool('adjustTextSpacing', { spacing: spacingValue });
+          
+          // Re-render grid with updated settings
+          renderSettingsGrid(currentSettings);
         }
       } else if (tool.parameters.properties.contrast) {
         const contrast = prompt('Enter contrast (50-300):', settings.adjustContrast || 100);
-        if (contrast) {
-          await executeAccessibilityTool('adjustContrast', { contrast: Number(contrast) });
-          settings.adjustContrast = Number(contrast);
-          renderSettingsGrid(settings);
+        if (contrast && !isNaN(contrast)) {
+          const contrastValue = Math.max(50, Math.min(300, Number(contrast)));
+          const newSettings = { adjustContrast: contrastValue };
+          
+          // Save and apply settings
+          await saveAndApplySettings(newSettings);
+          await executeAccessibilityTool('adjustContrast', { contrast: contrastValue });
+          
+          // Re-render grid with updated settings
+          renderSettingsGrid(currentSettings);
         }
       }
     });
@@ -394,12 +545,48 @@ function renderSettingsGrid(settings) {
 
 // Load settings and render grid on startup
 window.addEventListener('DOMContentLoaded', async () => {
-  let settings = {};
-  if (window.SettingsManager) {
-    const mgr = new window.SettingsManager();
-    settings = await mgr.loadSettings();
-  } else if (window.DEFAULT_SETTINGS) {
-    settings = { ...window.DEFAULT_SETTINGS };
+  try {
+    // Load settings from storage
+    const result = await chrome.storage.sync.get('browseEasySettings');
+    const defaultSettings = {
+      highlightLinks: false,
+      dyslexiaFriendly: false,
+      websiteScale: 100,
+      hideImages: false,
+      cursorSize: 100,
+      muteSound: false,
+      textSpacing: 100,
+      highlightOnHover: false,
+      enlargeButtons: false,
+      addTooltips: false,
+      adjustContrast: 100,
+      enabled: true
+    };
+    
+    currentSettings = { ...defaultSettings, ...result.browseEasySettings };
+    
+    // Render the settings grid with loaded settings
+    renderSettingsGrid(currentSettings);
+    
+    console.log('Panel loaded with settings:', currentSettings);
+  } catch (error) {
+    console.error('Failed to load settings in panel:', error);
+    // Fallback to default settings
+    const defaultSettings = {
+      highlightLinks: false,
+      dyslexiaFriendly: false,
+      websiteScale: 100,
+      hideImages: false,
+      cursorSize: 100,
+      muteSound: false,
+      textSpacing: 100,
+      highlightOnHover: false,
+      enlargeButtons: false,
+      addTooltips: false,
+      adjustContrast: 100,
+      enabled: true
+    };
+    currentSettings = defaultSettings;
+    renderSettingsGrid(currentSettings);
   }
-  renderSettingsGrid(settings);
 });

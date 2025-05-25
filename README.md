@@ -22,6 +22,26 @@ BrowseEasy is a Chrome extension that makes web pages more accessible using AI-p
 - Natural language commands like "make this more readable" or "highlight the links"
 - Intelligent suggestions for improving page accessibility
 
+### Settings Persistence
+- **Automatic Persistence**: All accessibility settings are automatically saved and persist across browser sessions
+- **Cross-Tab Sync**: Settings are synchronized across all open tabs in real-time
+- **Manual Settings**: Use the Settings tab in the extension panel to manually toggle features
+- **AI-Applied Settings**: Settings applied through AI chat are automatically saved
+- **Page Reload**: Settings are automatically reapplied when pages are refreshed or new pages are loaded
+
+#### How Settings Persistence Works
+1. **Settings Storage**: All settings are stored using Chrome's sync storage API
+2. **Auto-Application**: When a webpage loads, saved settings are automatically applied
+3. **Real-Time Sync**: Changes made in one tab are immediately applied to all other tabs
+4. **Persistent State**: The Settings tab always shows the current saved state of all features
+
+#### Testing Settings Persistence
+Use the included test page to verify settings persistence:
+1. Open `test-persistence.html` in your browser
+2. Enable some accessibility features through the extension panel
+3. Refresh the page - settings should persist and be automatically applied
+4. Open the same page in a new tab - settings should apply there too
+
 ## Installation
 
 1. Ensure you have a Gemini API key from Google AI Studio
