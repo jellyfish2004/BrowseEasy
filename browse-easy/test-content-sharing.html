@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrowseEasy Content Sharing Test</title>
+    <meta name="description" content="Test page for BrowseEasy content sharing functionality">
+    <meta name="keywords" content="accessibility, content sharing, AI, BrowseEasy">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #f5f5f5;
+        }
+        .content-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            border-left: 4px solid #ffc107;
+        }
+        .feature-list {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .test-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .test-form input, .test-form select, .test-form textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 15px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-form button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .test-form button:hover {
+            background: #0056b3;
+        }
+        .image-gallery {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .image-item {
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+        }
+        .image-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .navigation-links {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .navigation-links a {
+            display: inline-block;
+            margin: 5px 10px 5px 0;
+            padding: 8px 15px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .navigation-links a:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 BrowseEasy Content Sharing Test Page</h1>
+    
+    <div class="highlight">
+        <strong>🎯 Purpose:</strong> This page tests the new content sharing functionality in BrowseEasy. 
+        Enable "Share current page content" in the extension panel and try asking questions about this page!
+    </div>
+
+    <div class="content-section">
+        <h2>📄 What is Content Sharing?</h2>
+        <p>Content sharing allows BrowseEasy's AI to read and understand the current webpage content. When enabled, you can:</p>
+        <ul>
+            <li>Ask questions about the page content</li>
+            <li>Get summaries of the main information</li>
+            <li>Find specific information on the page</li>
+            <li>Get accessibility suggestions based on the actual content</li>
+        </ul>
+    </div>
+
+    <div class="content-section">
+        <h2>🔧 How to Test</h2>
+        <div class="feature-list">
+            <h3>Step 1: Enable Content Sharing</h3>
+            <ol>
+                <li>Open the BrowseEasy extension panel</li>
+                <li>Look for the checkbox "📄 Share current page content with AI"</li>
+                <li>Check the box to enable content sharing</li>
+                <li>You should see a status like "Ready: X words"</li>
+            </ol>
+        </div>
+
+        <div class="feature-list">
+            <h3>Step 2: Try These Questions</h3>
+            <ul>
+                <li>"What is this page about?"</li>
+                <li>"Summarize the main content"</li>
+                <li>"What links are available on this page?"</li>
+                <li>"What images are on this page?"</li>
+                <li>"What forms are available?"</li>
+                <li>"What are the main headings?"</li>
+                <li>"How can I make this page more accessible?"</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>🖼️ Sample Images</h2>
+        <p>This section contains sample images for the AI to analyze:</p>
+        <div class="image-gallery">
+            <div class="image-item">
+                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNDA3OGZmIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5BY2Nlc3NpYmlsaXR5IEljb248L3RleHQ+Cjwvc3ZnPg==" alt="Accessibility icon representing universal access">
+                <p>Accessibility Icon</p>
+            </div>
+            <div class="image-item">
+                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMjhhNzQ1Ii8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5XZWIgQWNjZXNzPC90ZXh0Pgo8L3N2Zz4=" alt="Web accessibility symbol showing inclusive design">
+                <p>Web Access Symbol</p>
+            </div>
+            <div class="image-item">
+                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmY2OTAwIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5BSSBBc3Npc3RhbnQ8L3RleHQ+Cjwvc3ZnPg==" alt="">
+                <p>AI Assistant (No Alt Text)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>🔗 Navigation Links</h2>
+        <p>These links demonstrate the link extraction functionality:</p>
+        <div class="navigation-links">
+            <a href="#accessibility">Accessibility Guide</a>
+            <a href="#features">Features</a>
+            <a href="#documentation">Documentation</a>
+            <a href="#support">Support</a>
+            <a href="https://example.com/external">External Link</a>
+            <a href="mailto:support@browseeasy.com">Contact Support</a>
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>📝 Sample Form</h2>
+        <p>This form demonstrates form element extraction:</p>
+        <form class="test-form">
+            <label for="name">Full Name:</label>
+            <input type="text" id="name" name="name" placeholder="Enter your full name">
+
+            <label for="email">Email Address:</label>
+            <input type="email" id="email" name="email" placeholder="your.email@example.com">
+
+            <label for="accessibility-needs">Accessibility Needs:</label>
+            <select id="accessibility-needs" name="accessibility-needs">
+                <option value="">Select your primary need</option>
+                <option value="visual">Visual impairments</option>
+                <option value="hearing">Hearing impairments</option>
+                <option value="motor">Motor impairments</option>
+                <option value="cognitive">Cognitive impairments</option>
+                <option value="multiple">Multiple needs</option>
+            </select>
+
+            <label for="feedback">Feedback about BrowseEasy:</label>
+            <textarea id="feedback" name="feedback" rows="4" placeholder="Tell us about your experience with BrowseEasy..."></textarea>
+
+            <button type="submit">Submit Feedback</button>
+        </form>
+    </div>
+
+    <div class="content-section">
+        <h2>📊 Content Statistics</h2>
+        <p>This page contains the following elements for testing:</p>
+        <ul>
+            <li><strong>Headings:</strong> Multiple H1, H2 headings for structure</li>
+            <li><strong>Paragraphs:</strong> Various text content for extraction</li>
+            <li><strong>Links:</strong> Internal and external navigation links</li>
+            <li><strong>Images:</strong> Sample images with and without alt text</li>
+            <li><strong>Forms:</strong> Input fields, selects, and textareas</li>
+            <li><strong>Lists:</strong> Ordered and unordered lists</li>
+            <li><strong>Metadata:</strong> Page title, description, and keywords</li>
+        </ul>
+    </div>
+
+    <div class="content-section">
+        <h2>🎯 Expected AI Capabilities</h2>
+        <p>With content sharing enabled, the AI should be able to:</p>
+        <div class="feature-list">
+            <h3>Content Analysis</h3>
+            <ul>
+                <li>Identify this as a test page for BrowseEasy</li>
+                <li>Summarize the main purpose and content</li>
+                <li>List the available sections and features</li>
+            </ul>
+        </div>
+        
+        <div class="feature-list">
+            <h3>Element Detection</h3>
+            <ul>
+                <li>Find and describe the navigation links</li>
+                <li>Identify form fields and their purposes</li>
+                <li>Describe images and their alt text status</li>
+                <li>Extract headings and page structure</li>
+            </ul>
+        </div>
+
+        <div class="feature-list">
+            <h3>Accessibility Suggestions</h3>
+            <ul>
+                <li>Suggest improvements for images without alt text</li>
+                <li>Recommend accessibility enhancements</li>
+                <li>Identify potential usability issues</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="highlight">
+        <strong>💡 Pro Tip:</strong> Try asking specific questions like "What accessibility issues do you see on this page?" 
+        or "Can you help me understand what this form is for?" to test the AI's understanding of the page content.
+    </div>
+
+    <script>
+        // Add some dynamic content for testing
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('BrowseEasy Content Sharing Test Page loaded');
+            
+            // Add timestamp to show dynamic content
+            const timestamp = new Date().toLocaleString();
+            const timestampEl = document.createElement('p');
+            timestampEl.innerHTML = `<small><em>Page loaded at: ${timestamp}</em></small>`;
+            document.body.appendChild(timestampEl);
+        });
+
+        // Form submission handler
+        document.querySelector('.test-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Form submission prevented (this is a test page)');
+        });
+    </script>
+</body>
+</html> 

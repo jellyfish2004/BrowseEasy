@@ -67,6 +67,26 @@
       --settings-icon-border: #000000;
     }
 
+    /* Dark High Contrast Theme */
+    [data-theme="dark-high-contrast"] {
+      --primary-color: #00ccff;
+      --user-msg-bg: #00ccff;
+      --user-msg-text: #000000;
+      --bot-msg-bg: #000000;
+      --bot-msg-text: #ffffff;
+      --error-msg-bg: #660000;
+      --error-msg-text: #ff6666;
+      --app-bg: #000000;
+      --border-color: #ffffff;
+      --hover-bg: #003366;
+      --text-primary: #ffffff;
+      --text-secondary: #cccccc;
+      --input-bg: #000000;
+      --settings-bg: #111111;
+      --settings-icon-bg: #000000;
+      --settings-icon-border: #ffffff;
+    }
+
     body {
       font-family: 'Roboto', sans-serif;
       margin: 0;
@@ -77,6 +97,7 @@
       background-color: var(--app-bg);
       color: var(--text-primary);
       transition: background-color 0.3s ease, color 0.3s ease;
+      font-size: 14px;
     }
 
     #app-bar {
@@ -92,7 +113,7 @@
 
     #app-bar h1 {
       margin: 0;
-      font-size: 1.25em;
+      font-size: 1.3em;
       font-weight: 500;
     }
 
@@ -158,10 +179,10 @@
     }
     .tab {
       flex: 1;
-      padding: 10px 0;
+      padding: 12px 0;
       background: none;
       border: none;
-      font-size: 0.92em;
+      font-size: 0.95em;
       color: var(--primary-color);
       cursor: pointer;
       border-bottom: 2px solid transparent;
@@ -202,6 +223,24 @@
       color: #006600;
     }
 
+    /* Dark high contrast tab adjustments */
+    [data-theme="dark-high-contrast"] .tab.active#chatTab {
+      background: #003366;
+      color: #00ccff;
+      border-bottom: 2.5px solid #00ccff;
+    }
+    [data-theme="dark-high-contrast"] .tab.active#settingsTab {
+      background: #003300;
+      color: #00ff66;
+      border-bottom: 2.5px solid #00ff66;
+    }
+    [data-theme="dark-high-contrast"] .tab#chatTab {
+      color: #00ccff;
+    }
+    [data-theme="dark-high-contrast"] .tab#settingsTab {
+      color: #00ff66;
+    }
+
     #messages {
       flex-grow: 1;
       overflow-y: auto;
@@ -212,7 +251,7 @@
     }
 
     .message {
-      padding: 10px 14px;
+      padding: 12px 16px;
       border-radius: 18px;
       max-width: 80%;
       word-wrap: break-word;
@@ -319,6 +358,14 @@
       color: #f28b82;
     }
 
+    /* Dark high contrast tool colors */
+    [data-theme="dark-high-contrast"] .tool-success {
+      color: #00ff66;
+    }
+    [data-theme="dark-high-contrast"] .tool-failure {
+      color: #ff6666;
+    }
+
     #settings-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -395,6 +442,32 @@
       background: var(--settings-icon-bg);
       border: 2px solid var(--border-color);
     }
+
+    /* Dark high contrast theme - high contrast colors */
+    [data-theme="dark-high-contrast"] .settings-icon.color-0,
+    [data-theme="dark-high-contrast"] .settings-icon.color-1,
+    [data-theme="dark-high-contrast"] .settings-icon.color-2,
+    [data-theme="dark-high-contrast"] .settings-icon.color-3,
+    [data-theme="dark-high-contrast"] .settings-icon.color-4,
+    [data-theme="dark-high-contrast"] .settings-icon.color-5,
+    [data-theme="dark-high-contrast"] .settings-icon.color-6,
+    [data-theme="dark-high-contrast"] .settings-icon.color-7,
+    [data-theme="dark-high-contrast"] .settings-icon.color-8,
+    [data-theme="dark-high-contrast"] .settings-icon.color-9 {
+      background: var(--settings-icon-bg);
+      border: 2px solid var(--border-color);
+      color: var(--text-primary);
+    }
+
+    #share-tab-btn {
+      margin-left: 8px;
+    }
+
+    #share-tab-btn.active {
+      background-color: var(--primary-color);
+      color: #ffffff;
+      border-color: var(--primary-color);
+    }
   </style>
 </head>
 <body>
@@ -405,7 +478,9 @@
         <button class="theme-btn active" data-theme="light" title="Light Theme">☀️</button>
         <button class="theme-btn" data-theme="dark" title="Dark Theme">🌙</button>
         <button class="theme-btn" data-theme="high-contrast" title="High Contrast">⚫</button>
+        <button class="theme-btn" data-theme="dark-high-contrast" title="Dark High Contrast">🔲</button>
       </div>
+      <button id="share-tab-btn" class="theme-btn" title="Share current tab content with AI">📄</button>
       <button id="audioModeButton" title="Switch to Audio Input">🎙️</button>
     </div>
   </div>

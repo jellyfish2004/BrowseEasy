@@ -1,11 +1,14 @@
 const messagesEl = document.getElementById('messages');
 const inputEl = document.getElementById('input');
-const audioModeButton = document.getElementById('audioModeButton'); // Get the new button
+const audioModeButton = document.getElementById('audioModeButton');
 const tabSwitcher = document.getElementById('tab-switcher');
 const chatTab = document.getElementById('chatTab');
 const settingsTab = document.getElementById('settingsTab');
 const messagesContainer = document.getElementById('messages');
 const settingsGrid = document.getElementById('settings-grid');
+const shareTabBtn = document.getElementById('share-tab-btn');
+const shareContentToggle = document.getElementById('share-content-toggle');
+const contentStatus = document.getElementById('content-status');
 
 let chatHistory = []; // Initialize chat history
 const MAX_HISTORY_MESSAGES = 10; // Max number of messages (user + bot) to keep, excluding system prompt & current query
@@ -13,6 +16,10 @@ const MAX_HISTORY_MESSAGES = 10; // Max number of messages (user + bot) to keep,
 // Theme switching functionality
 const themeButtons = document.querySelectorAll('.theme-btn');
 let currentTheme = 'light'; // Default theme
+
+// Content sharing functionality
+let contentSharingEnabled = false;
+let currentPageContent = null;
 
 // Load saved theme preference
 async function loadTheme() {
@@ -47,11 +54,32 @@ function setTheme(theme) {
 
 // Add event listeners for theme buttons
 themeButtons.forEach(button => {
+  // Skip the share tab button - it's not a theme button
+  if (button.id === 'share-tab-btn') return;
+  
   button.addEventListener('click', () => {
     const theme = button.getAttribute('data-theme');
     setTheme(theme);
   });
 });
+
+// Add event listener for share tab button
+shareTabBtn.addEventListener('click', () => {
+  contentSharingEnabled = !contentSharingEnabled;
+  updateShareTabButton();
+  saveContentSharingPreference(contentSharingEnabled);
+});
+
+// Update share tab button appearance
+function updateShareTabButton() {
+  if (contentSharingEnabled) {
+    shareTabBtn.classList.add('active');
+    shareTabBtn.title = 'Content sharing enabled - Click to disable';
+  } else {
+    shareTabBtn.classList.remove('active');
+    shareTabBtn.title = 'Share current tab content with AI - Click to enable';
+  }
+}
 
 // Load theme on startup
 loadTheme();
@@ -169,27 +197,54 @@ async function sendToGemini(userMessage) {
 Available tools:
 - highlightLinks: Highlight all links with yellow background
 - dyslexiaFriendly: Make text dyslexia-friendly with better fonts and spacing
-- scaleWebsite: Scale the website up or down (50-300%)
+- scaleWebsite: Scale the website up or down (50-300%, default: 150% for "bigger", 75% for "smaller")
 - hideImages: Hide all images and videos
-- adjustCursorSize: Make cursor larger or smaller (50-300%)
+- adjustCursorSize: Make cursor larger or smaller (50-300%, default: 150% for "bigger", 75% for "smaller")
 - muteSound: Mute all audio and video
-- adjustTextSpacing: Adjust text spacing and line height (50-300%)
+- adjustTextSpacing: Adjust text spacing and line height (50-300%, default: 150% for "more spacing", 75% for "less spacing")
 - highlightOnHover: Highlight elements when hovering
 - enlargeButtons: Make buttons larger and more visible
 - addTooltips: Add helpful tooltips to elements
-- adjustContrast: Adjust page contrast (50-300%)
+- adjustContrast: Adjust page contrast (50-300%, default: 150% for "higher contrast", 75% for "lower contrast")
 
-When users ask for accessibility improvements, use the appropriate tools. For example:
-- "Make this more readable" → use dyslexiaFriendly, adjustTextSpacing, possibly scaleWebsite
-- "I can't see the links" → use highlightLinks
-- "The text is too small" → use scaleWebsite
-- "Make the buttons bigger" → use enlargeButtons
-- "This is too bright" → use adjustContrast
-- "Hide distracting images" → use hideImages
+When users ask for accessibility improvements, use the appropriate tools with sensible defaults:
+- "Make this bigger/larger" → use scaleWebsite with 150%
+- "Make this smaller" → use scaleWebsite with 75%
+- "Increase text spacing" → use adjustTextSpacing with 150%
+- "Make cursor bigger" → use adjustCursorSize with 150%
+- "Higher contrast" → use adjustContrast with 150%
+- "Lower contrast" → use adjustContrast with 75%
 
-Always explain what you're doing and be helpful in suggesting other accessibility improvements.
+For more specific requests like "make it 200% bigger" or "scale to 120%", use the exact percentage specified.
+
+You can also answer questions about the current webpage content if the user has enabled content sharing. When content sharing is enabled, you'll have access to the page's text, headings, links, images, and other elements.
+
+Always explain what you're doing and be helpful in suggesting other accessibility improvements.`;
+
+  // Build the user message with optional page content
+  let fullUserMessage = userMessage;
+  
+  if (contentSharingEnabled && currentPageContent) {
+    const pageInfo = `
+
+CURRENT PAGE INFORMATION:
+Title: ${currentPageContent.title}
+URL: ${currentPageContent.url}
+
+Main Content: ${currentPageContent.text.substring(0, 3000)}${currentPageContent.text.length > 3000 ? '...' : ''}
+
+Headings: ${currentPageContent.headings.map(h => `${h.level}: ${h.text}`).join(', ')}
+
+Key Links: ${currentPageContent.links.slice(0, 10).map(l => `"${l.text}" (${l.href})`).join(', ')}${currentPageContent.links.length > 10 ? '...' : ''}
+
+Images: ${currentPageContent.images.slice(0, 5).map(img => `"${img.alt || 'No alt text'}" (${img.src})`).join(', ')}${currentPageContent.images.length > 5 ? '...' : ''}
 
 User request: ${userMessage}`;
+    
+    fullUserMessage = pageInfo;
+  } else {
+    fullUserMessage = `User request: ${userMessage}`;
+  }
   
   // Construct messages: system prompt, then history, then current user message
   const messagesForAPI = [
@@ -209,12 +264,12 @@ User request: ${userMessage}`;
     ...chatHistory, // chatHistory already contains {role, parts}
     { 
       role: "user", 
-      parts: [{ text: `${systemPromptText}\n\nUser request: ${userMessage}` }] // Combine system prompt with current user message for this turn's context
+      parts: [{ text: `${systemPromptText}\n\n${fullUserMessage}` }] // Combine system prompt with current user message (and optional page content)
     }
   ];
 
   const requestBody = {
-    contents: currentTurnContents, // Send history + current message (with system prompt)
+    contents: currentTurnContents, // Send history + current message (with system prompt and optional page content)
     tools: [
       {
         function_declarations: ACCESSIBILITY_TOOLS
@@ -299,7 +354,11 @@ User request: ${userMessage}`;
     else botResponseText = 'Accessibility adjustments applied!';
 
   } else {
-    botResponseText = aiTextResponse || 'I can help you make this page more accessible. Try asking me to make it more readable, highlight links, or adjust the size!';
+    if (contentSharingEnabled && currentPageContent) {
+      botResponseText = aiTextResponse || 'I can help you with this page! I can see the content and apply accessibility improvements, or answer questions about what\'s on the page.';
+    } else {
+      botResponseText = aiTextResponse || 'I can help you make this page more accessible. Try asking me to make it more readable, highlight links, or adjust the size! You can also enable "Share current page content" to let me answer questions about the page.';
+    }
   }
   
   // If botResponseForHistory is undefined or doesn't have role, construct it.
@@ -331,7 +390,7 @@ function append(type, text) {
 
 // Add some quick accessibility commands
 document.addEventListener('DOMContentLoaded', () => {
-  append('bot', '👋 Hi! I\'m BrowseEasy, your accessibility assistant. I can help make web pages easier to read and navigate. Try saying:\n\n• "Make this more readable"\n• "Highlight the links"\n• "Make the text bigger"\n• "Hide images"\n• "Make buttons larger"\n\nWhat would you like me to help with?');
+  append('bot', '👋 Hi! I\'m BrowseEasy, your accessibility assistant. I can help make web pages easier to read and navigate.\n\n**Try saying:**\n• "Make this more readable"\n• "Highlight the links"\n• "Make the text bigger"\n• "Hide images"\n• "Make buttons larger"\n\n**New!** Click the 📄 button at the top to share tab content and ask me questions like:\n• "What is this page about?"\n• "Summarize the main content"\n• "What links are available?"\n\nWhat would you like me to help with?');
 });
 
 // Tab switching logic
@@ -634,5 +693,106 @@ window.addEventListener('DOMContentLoaded', async () => {
     };
     currentSettings = defaultSettings;
     renderSettingsGrid(currentSettings);
+  }
+});
+
+// Load content sharing preference
+async function loadContentSharingPreference() {
+  try {
+    const result = await chrome.storage.sync.get('browseEasyContentSharing');
+    contentSharingEnabled = result.browseEasyContentSharing || false;
+    updateShareTabButton();
+    
+    if (contentSharingEnabled) {
+      await loadCurrentPageContent();
+    }
+  } catch (error) {
+    console.error('Failed to load content sharing preference:', error);
+  }
+}
+
+// Save content sharing preference
+async function saveContentSharingPreference(enabled) {
+  try {
+    contentSharingEnabled = enabled;
+    await chrome.storage.sync.set({ browseEasyContentSharing: enabled });
+    updateShareTabButton();
+    
+    if (enabled) {
+      await loadCurrentPageContent();
+    } else {
+      currentPageContent = null;
+    }
+  } catch (error) {
+    console.error('Failed to save content sharing preference:', error);
+  }
+}
+
+// Load current page content
+async function loadCurrentPageContent() {
+  try {
+    console.log('Loading current page content...');
+    
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tabs[0]) {
+      // Add a timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 5000)
+      );
+      
+      const messagePromise = chrome.tabs.sendMessage(tabs[0].id, {
+        type: 'getPageContent'
+      });
+      
+      const response = await Promise.race([messagePromise, timeoutPromise]);
+      
+      if (response && response.success) {
+        currentPageContent = response.content;
+        console.log('Page content loaded successfully:', currentPageContent.title);
+      } else {
+        throw new Error(response?.error || 'Failed to get page content');
+      }
+    } else {
+      throw new Error('No active tab found');
+    }
+  } catch (error) {
+    console.error('Failed to load page content:', error);
+    currentPageContent = null;
+    
+    // Try again after a short delay
+    setTimeout(() => {
+      if (contentSharingEnabled) {
+        loadCurrentPageContent();
+      }
+    }, 2000);
+  }
+}
+
+// Load content sharing preference on startup
+loadContentSharingPreference();
+
+// Listen for tab changes and reload content if sharing is enabled
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  console.log('Tab activated:', activeInfo.tabId);
+  if (contentSharingEnabled) {
+    // Small delay to ensure the tab is fully loaded
+    setTimeout(() => {
+      loadCurrentPageContent();
+    }, 500);
+  }
+});
+
+// Listen for tab updates (page navigation) and reload content if sharing is enabled
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete' && contentSharingEnabled) {
+    // Check if this is the active tab
+    const activeTabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (activeTabs[0] && activeTabs[0].id === tabId) {
+      console.log('Active tab updated:', tab.url);
+      // Small delay to ensure the page is fully loaded
+      setTimeout(() => {
+        loadCurrentPageContent();
+      }, 1000);
+    }
   }
 });

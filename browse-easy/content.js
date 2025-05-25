@@ -170,6 +170,17 @@
           }
           break;
 
+        case 'getPageContent':
+          try {
+            const pageContent = extractPageContent();
+            log('Extracted page content, length:', pageContent.text.length);
+            sendResponse({ success: true, content: pageContent });
+          } catch (err) {
+            error('Failed to extract page content:', err);
+            sendResponse({ error: err.message });
+          }
+          break;
+
         case 'clearAll':
           log('Clearing all accessibility settings');
           accessibilityManager.clearAll();
@@ -188,6 +199,139 @@
     
     return false; // Don't keep the message port open unless explicitly returning true
   });
+
+  // Function to extract meaningful content from the current webpage
+  function extractPageContent() {
+    const content = {
+      url: window.location.href,
+      title: document.title,
+      text: '',
+      headings: [],
+      links: [],
+      images: [],
+      forms: [],
+      metadata: {}
+    };
+
+    // Extract main text content
+    const textElements = document.querySelectorAll('p, div, span, article, section, main, aside, li, td, th');
+    const textContent = [];
+    
+    textElements.forEach(el => {
+      const text = el.textContent?.trim();
+      if (text && text.length > 10 && !isHiddenElement(el)) {
+        textContent.push(text);
+      }
+    });
+    
+    // Remove duplicates and join
+    content.text = [...new Set(textContent)].join(' ').substring(0, 10000); // Limit to 10k chars
+
+    // Extract headings
+    const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    headings.forEach(heading => {
+      const text = heading.textContent?.trim();
+      if (text && !isHiddenElement(heading)) {
+        content.headings.push({
+          level: heading.tagName.toLowerCase(),
+          text: text
+        });
+      }
+    });
+
+    // Extract links
+    const links = document.querySelectorAll('a[href]');
+    links.forEach(link => {
+      const text = link.textContent?.trim();
+      const href = link.href;
+      if (text && href && !isHiddenElement(link)) {
+        content.links.push({
+          text: text,
+          href: href
+        });
+      }
+    });
+
+    // Extract images with alt text
+    const images = document.querySelectorAll('img');
+    images.forEach(img => {
+      if (!isHiddenElement(img)) {
+        content.images.push({
+          src: img.src,
+          alt: img.alt || '',
+          title: img.title || ''
+        });
+      }
+    });
+
+    // Extract form information
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+      if (!isHiddenElement(form)) {
+        const inputs = form.querySelectorAll('input, select, textarea');
+        const formData = {
+          action: form.action || '',
+          method: form.method || 'get',
+          inputs: []
+        };
+        
+        inputs.forEach(input => {
+          formData.inputs.push({
+            type: input.type || input.tagName.toLowerCase(),
+            name: input.name || '',
+            placeholder: input.placeholder || '',
+            label: getInputLabel(input)
+          });
+        });
+        
+        content.forms.push(formData);
+      }
+    });
+
+    // Extract metadata
+    const metaTags = document.querySelectorAll('meta');
+    metaTags.forEach(meta => {
+      const name = meta.name || meta.property;
+      const content_attr = meta.content;
+      if (name && content_attr) {
+        content.metadata[name] = content_attr;
+      }
+    });
+
+    return content;
+  }
+
+  // Helper function to check if element is hidden
+  function isHiddenElement(element) {
+    const style = window.getComputedStyle(element);
+    return style.display === 'none' || 
+           style.visibility === 'hidden' || 
+           style.opacity === '0' ||
+           element.offsetParent === null;
+  }
+
+  // Helper function to get label for form inputs
+  function getInputLabel(input) {
+    // Try to find associated label
+    if (input.id) {
+      const label = document.querySelector(`label[for="${input.id}"]`);
+      if (label) return label.textContent?.trim() || '';
+    }
+    
+    // Try to find parent label
+    const parentLabel = input.closest('label');
+    if (parentLabel) {
+      return parentLabel.textContent?.trim() || '';
+    }
+    
+    // Try to find nearby text
+    const prevSibling = input.previousElementSibling;
+    if (prevSibling && prevSibling.textContent) {
+      return prevSibling.textContent.trim();
+    }
+    
+    return '';
+  }
 
   // Initialize when the page is ready
   log('Content script loading...');

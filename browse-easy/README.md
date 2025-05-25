@@ -22,6 +22,7 @@ BrowseEasy is a Chrome extension that provides AI-powered accessibility features
 - Chat with AI to apply accessibility settings using natural language
 - AI can analyze page content and suggest appropriate accessibility modifications
 - Settings applied through AI chat are automatically saved and persisted
+- **NEW: Content Sharing** - Enable sharing of current webpage content with AI for enhanced assistance
 
 ### Settings Persistence
 - **Automatic Persistence**: All settings are automatically saved using Chrome's sync storage
@@ -36,6 +37,24 @@ BrowseEasy is a Chrome extension that provides AI-powered accessibility features
 - **High Contrast (⚫)**: Maximum contrast for accessibility with bold borders and high contrast colors
 - **Theme Persistence**: Your theme preference is saved and restored when you reopen the extension
 - **Smooth Transitions**: Themes switch instantly with smooth color transitions
+
+### Content Sharing Feature
+- **Toggle Control**: Enable/disable sharing of webpage content with AI via checkbox in chat interface
+- **Page Analysis**: When enabled, AI can read and understand the current webpage content including:
+  - Page title and main text content
+  - Headings and page structure
+  - Links and navigation elements
+  - Images and their alt text status
+  - Form fields and their purposes
+  - Page metadata
+- **Enhanced Conversations**: Ask questions about the current page like:
+  - "What is this page about?"
+  - "Summarize the main content"
+  - "What links are available?"
+  - "What accessibility issues do you see?"
+- **Privacy Control**: Content sharing is opt-in and can be toggled on/off at any time
+- **Smart Extraction**: Only meaningful content is extracted (hidden elements are ignored)
+- **Content Limits**: Text content is limited to 10,000 characters for performance
 
 ## Installation
 
@@ -69,6 +88,24 @@ You can use natural language to control accessibility features:
 - "Make the cursor bigger"
 - "Add tooltips to buttons"
 - "Generate alt text for images"
+
+### Content Sharing Commands
+When content sharing is enabled, you can also ask:
+- "What is this page about?"
+- "Summarize the main content"
+- "What links are available on this page?"
+- "What images are on this page?"
+- "What forms are available?"
+- "What are the main headings?"
+- "What accessibility issues do you see?"
+- "How can I make this page more accessible?"
+
+### Using Content Sharing
+1. **Enable Content Sharing**: Check the "📄 Share current page content with AI" checkbox in the chat interface
+2. **Wait for Loading**: The status will show "Loading..." then "Ready: X words" when content is extracted
+3. **Ask Questions**: Use natural language to ask about the page content or request accessibility improvements
+4. **Privacy Control**: Uncheck the box anytime to stop sharing content with AI
+5. **Automatic Updates**: Content is re-extracted when you enable sharing on a new page
 
 ### Settings Persistence
 - Settings automatically save when changed through either the Chat or Settings tabs
@@ -137,6 +174,30 @@ If you see blue dashed outlines appearing on elements without hovering:
    - Verify the Gemini API key is configured
    - Check browser console for API errors
 
+### Content Sharing Issues
+
+1. **Content Not Loading**:
+   - Ensure the checkbox is checked
+   - Check if the page has finished loading
+   - Some pages may block content extraction due to security policies
+   - Try refreshing the page and re-enabling content sharing
+
+2. **"Failed to load" Status**:
+   - The page may not be compatible with content extraction
+   - Try on a different webpage
+   - Check browser console for error messages
+
+3. **AI Not Understanding Content**:
+   - Ensure content sharing is enabled (checkbox checked)
+   - Look for "Ready: X words" status
+   - Try asking more specific questions about the page
+   - Some dynamic content may not be captured
+
+4. **Content Sharing Toggle Not Saving**:
+   - Ensure Chrome sync is enabled
+   - Check Chrome storage permissions
+   - Try toggling the setting again
+
 ## Development
 
 ### File Structure
@@ -150,7 +211,8 @@ browse-easy/
 ├── settings.js            # Settings management
 ├── tools.js               # AI tool definitions
 ├── background.js           # Background script
-└── test-*.html            # Test and debug pages
+├── test-*.html            # Test and debug pages
+└── test-content-sharing.html # Content sharing functionality test
 ```
 
 ### Key Components
@@ -169,6 +231,7 @@ Use the provided test pages to verify functionality:
 - `debug-styles.html` - Debug styling issues
 - `test-current-issue.html` - Debug specific issues
 - `test-themes.html` - Test theme switching functionality
+- `test-content-sharing.html` - Test content sharing and AI page analysis
 
 ### Theme Development
 
