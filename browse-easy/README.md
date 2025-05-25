@@ -1,7 +1,14 @@
 # BrowseEasy - Chrome Extension for Web Accessibility
 
 BrowseEasy is a Chrome extension that provides AI-powered accessibility features to make web browsing easier for users with various needs.
-
+Usage:
+```
+git clone https://github.com/jellyfish2004/BrowseEasy.git
+cd browse-easy
+cp config.example.js config.js
+enter API keys for gemini (chat agent), and sarvam (for ASR)
+go to chrome://extensions -> load unpacked -> select browse-easy folder
+```
 ## Features
 
 ### Core Accessibility Tools
