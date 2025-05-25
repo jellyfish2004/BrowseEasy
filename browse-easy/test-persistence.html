@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrowseEasy Settings Persistence Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .test-button {
+            background: #007cba;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #005a87;
+        }
+        .test-link {
+            color: #007cba;
+            text-decoration: underline;
+        }
+        .test-image {
+            width: 200px;
+            height: 150px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            display: inline-block;
+            margin: 10px;
+            border-radius: 8px;
+        }
+        .instructions {
+            background: #e8f4fd;
+            padding: 15px;
+            border-left: 4px solid #007cba;
+            margin: 20px 0;
+        }
+        .status {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>BrowseEasy Settings Persistence Test</h1>
+    
+    <div class="instructions">
+        <h3>How to Test Settings Persistence:</h3>
+        <ol>
+            <li>Open the BrowseEasy extension panel (click the extension icon)</li>
+            <li>Go to the Settings tab and enable some accessibility features</li>
+            <li>Refresh this page - the settings should persist and be automatically applied</li>
+            <li>Try opening this page in a new tab - settings should also apply there</li>
+            <li>Use the AI chat to enable features and check if they persist</li>
+        </ol>
+        
+        <h3>How to Test Hover Highlighting:</h3>
+        <ol>
+            <li>Enable "Highlight on Hover" in the Settings tab or ask the AI: "highlight elements when I hover"</li>
+            <li>Move your cursor over the interactive elements below (buttons, links, inputs)</li>
+            <li>You should see a <strong>blue background with dashed blue outline</strong> appear when hovering</li>
+            <li>Non-interactive elements (spans, divs, disabled elements) should NOT highlight</li>
+            <li>The highlighting should disappear when you move the cursor away</li>
+            <li><strong>Note:</strong> This is different from "Highlight Links" which shows permanent yellow highlighting</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Elements</h2>
+        <p>This page contains various elements to test accessibility features:</p>
+        
+        <h3>Links (for highlight links feature)</h3>
+        <p>Here are some test links: 
+            <a href="#" class="test-link">Test Link 1</a>, 
+            <a href="#" class="test-link">Test Link 2</a>, 
+            <a href="#" class="test-link">Test Link 3</a>
+        </p>
+        
+        <h3>Buttons (for enlarge buttons feature)</h3>
+        <button class="test-button">Button 1</button>
+        <button class="test-button">Button 2</button>
+        <button class="test-button">Button 3</button>
+        
+        <h3>Interactive Elements (for hover highlighting)</h3>
+        <p>Hover over these elements to test the hover highlighting feature:</p>
+        <div style="margin: 10px 0;">
+            <button class="test-button">Hover Button</button>
+            <a href="#test" style="margin: 0 10px; padding: 5px; background: #f0f0f0;">Hover Link</a>
+            <input type="text" placeholder="Hover Input Field" style="margin: 0 10px; padding: 5px;">
+            <select style="margin: 0 10px; padding: 5px;">
+                <option>Hover Select</option>
+                <option>Option 2</option>
+            </select>
+        </div>
+        <div style="margin: 10px 0;">
+            <textarea placeholder="Hover Textarea" style="margin: 0 10px; padding: 5px; resize: none; height: 60px;"></textarea>
+            <div role="button" tabindex="0" style="display: inline-block; margin: 0 10px; padding: 8px 12px; background: #e0e0e0; border: 1px solid #ccc; cursor: pointer;">Custom Button (role="button")</div>
+        </div>
+        
+        <h3>Non-Interactive Elements (should NOT highlight on hover)</h3>
+        <p>These elements should NOT highlight when you hover over them:</p>
+        <div style="margin: 10px 0;">
+            <span style="padding: 5px; background: #f9f9f9; margin: 0 5px;">Regular Span</span>
+            <div style="padding: 5px; background: #f9f9f9; margin: 0 5px; display: inline-block;">Regular Div</div>
+            <button disabled style="margin: 0 5px; padding: 5px;">Disabled Button</button>
+            <input type="text" disabled placeholder="Disabled Input" style="margin: 0 5px; padding: 5px;">
+        </div>
+        
+        <h3>Images (for hide images feature)</h3>
+        <div class="test-image" title="Test Image 1"></div>
+        <div class="test-image" title="Test Image 2"></div>
+        
+        <h3>Text (for dyslexia-friendly and text spacing features)</h3>
+        <p>This is a paragraph of text to test dyslexia-friendly formatting and text spacing adjustments. 
+        The text should change font, spacing, and line height when those features are enabled.</p>
+        
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut 
+        labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco 
+        laboris nisi ut aliquip ex ea commodo consequat.</p>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Instructions</h2>
+        <div class="status">
+            <strong>Expected Behavior:</strong>
+            <ul>
+                <li>Settings should persist when you refresh the page</li>
+                <li>Settings should apply automatically when opening new tabs</li>
+                <li>Changes made in the Settings tab should be saved</li>
+                <li>Changes made via AI chat should be saved</li>
+                <li>Settings should sync across all tabs</li>
+            </ul>
+            
+            <strong>Hover Highlighting Expected Behavior:</strong>
+            <ul>
+                <li>Only interactive elements should highlight on hover (buttons, links, inputs, etc.)</li>
+                <li>Disabled elements should NOT highlight</li>
+                <li>Empty links (href="" or href="#") should NOT highlight</li>
+                <li>Regular text, spans, and divs should NOT highlight</li>
+                <li>Highlighting should appear immediately when cursor enters element</li>
+                <li>Highlighting should disappear when cursor leaves element</li>
+                <li>The highlight should be a <strong>blue background with dashed blue outline</strong></li>
+                <li>Should NOT show permanent highlighting - only on actual hover</li>
+                <li>Different from "Highlight Links" feature (which is yellow/permanent)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Debug Information</h2>
+        <p>Open the browser console to see debug information about settings loading and application.</p>
+        <button onclick="showDebugInfo()" class="test-button">Show Debug Info</button>
+        <div id="debug-output"></div>
+    </div>
+
+    <script>
+        function showDebugInfo() {
+            const debugOutput = document.getElementById('debug-output');
+            
+            if (window.browseEasyDebug) {
+                const status = window.browseEasyDebug.getStatus();
+                debugOutput.innerHTML = `
+                    <h4>BrowseEasy Debug Status:</h4>
+                    <pre>${JSON.stringify(status, null, 2)}</pre>
+                `;
+            } else {
+                debugOutput.innerHTML = `
+                    <p style="color: red;">BrowseEasy debug functions not available. 
+                    Make sure the extension is loaded and this page is refreshed.</p>
+                `;
+            }
+        }
+
+        // Log when page loads
+        console.log('BrowseEasy test page loaded');
+        
+        // Check if extension is available after a short delay
+        setTimeout(() => {
+            if (window.browseEasyDebug) {
+                console.log('BrowseEasy extension detected');
+                console.log('Status:', window.browseEasyDebug.getStatus());
+            } else {
+                console.log('BrowseEasy extension not detected');
+            }
+        }, 1000);
+    </script>
+</body>
+</html> 

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrowseEasy Theme Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .theme-demo {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .demo-section {
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        .theme-controls {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .theme-btn {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .theme-btn:hover {
+            background: #1557b0;
+        }
+        .theme-btn.active {
+            background: #0d47a1;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .status {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <h1>BrowseEasy Theme Test</h1>
+    
+    <div class="status">
+        <strong>Purpose:</strong> This page tests the theme switching functionality added to the BrowseEasy extension panel.
+    </div>
+
+    <div class="theme-controls">
+        <h3>Theme Controls</h3>
+        <p>Click these buttons to test theme switching (simulates the extension panel buttons):</p>
+        <button class="theme-btn active" data-theme="light">☀️ Light Theme</button>
+        <button class="theme-btn" data-theme="dark">🌙 Dark Theme</button>
+        <button class="theme-btn" data-theme="high-contrast">⚫ High Contrast</button>
+        <p><strong>Current Theme:</strong> <span id="current-theme">Light</span></p>
+    </div>
+
+    <div class="theme-demo">
+        <h2>Extension Panel Features</h2>
+        
+        <div class="demo-section">
+            <h3>✨ New Theme Features Added</h3>
+            <ul>
+                <li><strong>Light Theme (☀️):</strong> Clean, bright interface with Google-style colors</li>
+                <li><strong>Dark Theme (🌙):</strong> Dark background with light text for reduced eye strain</li>
+                <li><strong>High Contrast (⚫):</strong> Maximum contrast for accessibility with black borders</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h3>🎨 Theme Implementation Details</h3>
+            <ul>
+                <li>CSS custom properties (variables) for easy theme switching</li>
+                <li>Smooth transitions between themes (0.3s ease)</li>
+                <li>Theme preference saved to Chrome storage and persists across sessions</li>
+                <li>All UI elements adapt to the selected theme</li>
+                <li>Accessibility-focused high contrast option</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h3>🔧 Technical Features</h3>
+            <ul>
+                <li>Theme buttons in the app bar next to the audio button</li>
+                <li>Active theme button highlighted with primary color</li>
+                <li>Theme data stored in <code>browseEasyTheme</code> Chrome storage key</li>
+                <li>Automatic theme loading on extension startup</li>
+                <li>Error handling for storage operations</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h3>🎯 UI Elements That Adapt</h3>
+            <ul>
+                <li>Background colors for panel, messages, and settings</li>
+                <li>Text colors (primary and secondary)</li>
+                <li>Border colors and hover effects</li>
+                <li>Input field styling</li>
+                <li>Settings grid and icon backgrounds</li>
+                <li>Tab active states</li>
+                <li>Error and success message colors</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="theme-demo">
+        <h2>Usage Instructions</h2>
+        
+        <div class="demo-section">
+            <h3>📱 How to Use in Extension</h3>
+            <ol>
+                <li>Open the BrowseEasy extension panel</li>
+                <li>Look for the theme buttons in the top-right corner (☀️ 🌙 ⚫)</li>
+                <li>Click any theme button to switch themes instantly</li>
+                <li>Your theme preference will be saved automatically</li>
+                <li>The theme will persist when you reopen the extension</li>
+            </ol>
+        </div>
+
+        <div class="demo-section">
+            <h3>♿ Accessibility Benefits</h3>
+            <ul>
+                <li><strong>Dark Theme:</strong> Reduces eye strain in low-light conditions</li>
+                <li><strong>High Contrast:</strong> Improves readability for users with visual impairments</li>
+                <li><strong>Light Theme:</strong> Provides familiar, clean interface for general use</li>
+                <li>All themes maintain proper color contrast ratios</li>
+                <li>Theme switching is keyboard accessible</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Simulate the theme switching functionality
+        const themeButtons = document.querySelectorAll('.theme-btn');
+        const currentThemeSpan = document.getElementById('current-theme');
+        let currentTheme = 'light';
+
+        // Theme color schemes (simplified for demo)
+        const themes = {
+            light: {
+                name: 'Light',
+                bodyBg: '#ffffff',
+                textColor: '#202124',
+                demoBg: '#f5f5f5',
+                sectionBg: '#ffffff'
+            },
+            dark: {
+                name: 'Dark',
+                bodyBg: '#1a1a1a',
+                textColor: '#e8eaed',
+                demoBg: '#202124',
+                sectionBg: '#2d2d2d'
+            },
+            'high-contrast': {
+                name: 'High Contrast',
+                bodyBg: '#ffffff',
+                textColor: '#000000',
+                demoBg: '#f0f0f0',
+                sectionBg: '#ffffff'
+            }
+        };
+
+        function setTheme(theme) {
+            currentTheme = theme;
+            const themeConfig = themes[theme];
+            
+            // Update active button
+            themeButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-theme') === theme) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Apply theme colors (simplified demo)
+            document.body.style.backgroundColor = themeConfig.bodyBg;
+            document.body.style.color = themeConfig.textColor;
+            
+            document.querySelectorAll('.theme-demo').forEach(el => {
+                el.style.backgroundColor = themeConfig.demoBg;
+                if (theme === 'high-contrast') {
+                    el.style.border = '2px solid #000000';
+                } else {
+                    el.style.border = '1px solid #ddd';
+                }
+            });
+            
+            document.querySelectorAll('.demo-section').forEach(el => {
+                el.style.backgroundColor = themeConfig.sectionBg;
+                if (theme === 'high-contrast') {
+                    el.style.border = '1px solid #000000';
+                } else if (theme === 'dark') {
+                    el.style.border = '1px solid #3c4043';
+                } else {
+                    el.style.border = '1px solid #ccc';
+                }
+            });
+            
+            // Update current theme display
+            currentThemeSpan.textContent = themeConfig.name;
+            
+            console.log(`Theme switched to: ${themeConfig.name}`);
+        }
+
+        // Add event listeners
+        themeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const theme = button.getAttribute('data-theme');
+                setTheme(theme);
+            });
+        });
+
+        // Initialize with light theme
+        setTheme('light');
+        
+        console.log('Theme test page loaded');
+    </script>
+</body>
+</html> 

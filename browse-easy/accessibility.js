@@ -46,16 +46,15 @@ class AccessibilityManager {
   // 2. Dyslexia Friendly Text
   dyslexiaFriendly(enabled) {
     const id = 'browse-easy-dyslexia-friendly';
+    const textElementsSelector = 'p, div, span, li, a, article, section, main, aside, header, footer, caption, td, th, label, h1, h2, h3, h4, h5, h6';
     if (enabled) {
       const css = `
-        * {
+        ${textElementsSelector} {
           font-family: 'Arial', 'Helvetica', sans-serif !important;
-          line-height: 1.5 !important;
-          letter-spacing: 0.1em !important;
+          line-height: 1.6 !important; /* Slightly increased default line-height */
+          letter-spacing: 0.12em !important; /* Slightly increased default letter-spacing */
           word-spacing: 0.2em !important;
-        }
-        p, div, span, li {
-          text-align: left !important;
+          /* text-align: left !important; /* Removing this to respect original alignment more often */
         }
       `;
       this.injectCSS(css, id);
@@ -145,16 +144,19 @@ class AccessibilityManager {
   // 7. Adjust Text Spacing
   adjustTextSpacing(spacing) {
     const id = 'browse-easy-text-spacing';
+    const textElementsSelector = 'p, div, span, li, a, article, section, main, aside, header, footer, caption, td, th, label, h1, h2, h3, h4, h5, h6';
+    const blockElementsSelector = 'p, div, li, article, section, main, aside, header, footer, h1, h2, h3, h4, h5, h6';
+
     if (spacing !== 100) {
-      const spaceMultiplier = spacing / 100;
+      const spaceMultiplier = Math.max(0.5, Math.min(3, spacing / 100)); // Clamp multiplier between 0.5 and 3
       const css = `
-        * {
-          line-height: ${1.2 * spaceMultiplier} !important;
-          letter-spacing: ${0.05 * spaceMultiplier}em !important;
-          word-spacing: ${0.1 * spaceMultiplier}em !important;
+        ${textElementsSelector} {
+          line-height: calc(1.5em * ${spaceMultiplier}) !important; 
+          letter-spacing: calc(0.05em * ${spaceMultiplier}) !important;
+          word-spacing: calc(0.1em * ${spaceMultiplier}) !important;
         }
-        p, div, span, li, h1, h2, h3, h4, h5, h6 {
-          margin-bottom: ${10 * spaceMultiplier}px !important;
+        ${blockElementsSelector} {
+          margin-bottom: calc(1em * ${spaceMultiplier}) !important;
         }
       `;
       this.injectCSS(css, id);
@@ -167,10 +169,50 @@ class AccessibilityManager {
   highlightOnHover(enabled) {
     const id = 'browse-easy-highlight-hover';
     if (enabled) {
+      // Simple, reliable CSS that only applies on hover
       const css = `
-        *:hover {
-          background-color: rgba(255, 255, 0, 0.3) !important;
-          outline: 2px solid #ff6600 !important;
+        /* Interactive elements - ONLY on hover */
+        a:not([href=""]):not([href="#"]):hover,
+        button:not([disabled]):hover,
+        input:not([disabled]):not([type="hidden"]):hover,
+        select:not([disabled]):hover,
+        textarea:not([disabled]):hover,
+        [role="button"]:not([aria-disabled="true"]):hover,
+        [role="link"]:not([aria-disabled="true"]):hover,
+        [role="checkbox"]:not([aria-disabled="true"]):hover,
+        [role="radio"]:not([aria-disabled="true"]):hover,
+        [role="menuitem"]:not([aria-disabled="true"]):hover,
+        [role="tab"]:not([aria-disabled="true"]):hover,
+        [role="option"]:not([aria-disabled="true"]):hover,
+        [tabindex]:not([tabindex="-1"]):not([disabled]):hover {
+          background-color: rgba(0, 150, 255, 0.2) !important;
+          outline: 2px dashed #0096ff !important;
+          outline-offset: 3px !important;
+          box-shadow: 0 0 10px rgba(0, 150, 255, 0.4) !important;
+          border-radius: 6px !important;
+          transition: all 0.15s ease-in-out !important;
+          position: relative !important;
+          z-index: 10000 !important;
+        }
+        
+        /* Special handling for links on hover */
+        a:not([href=""]):not([href="#"]):hover {
+          background-color: rgba(0, 150, 255, 0.25) !important;
+          color: #003d82 !important;
+          text-decoration: underline !important;
+          text-decoration-color: #0096ff !important;
+          text-decoration-thickness: 2px !important;
+          border: none !important;
+        }
+        
+        /* Special handling for buttons on hover */
+        button:not([disabled]):hover,
+        input[type="button"]:not([disabled]):hover,
+        input[type="submit"]:not([disabled]):hover,
+        input[type="reset"]:not([disabled]):hover,
+        [role="button"]:not([aria-disabled="true"]):hover {
+          transform: scale(1.03) !important;
+          background-color: rgba(0, 150, 255, 0.15) !important;
         }
       `;
       this.injectCSS(css, id);
@@ -202,35 +244,30 @@ class AccessibilityManager {
 
   // 10. Add Tooltips
   addTooltips(enabled) {
+    const tooltipMarker = 'data-browseeasy-tooltip';
     if (enabled) {
-      document.querySelectorAll('img, button, a, input').forEach(el => {
-        if (!el.title && !el.getAttribute('aria-label')) {
+      document.querySelectorAll('img, button, a, input[type="button"], input[type="submit"], input[type="reset"], [role="button"], [role="link"]').forEach(el => {
+        if (!el.title && !el.getAttribute('aria-label') && !el.hasAttribute(tooltipMarker)) {
           let tooltip = '';
           if (el.tagName === 'IMG') {
             tooltip = el.alt || 'Image';
           } else if (el.tagName === 'A') {
             tooltip = el.textContent.trim() || el.href || 'Link';
-          } else if (el.tagName === 'BUTTON') {
-            tooltip = el.textContent.trim() || 'Button';
+          } else if (el.tagName === 'BUTTON' || el.getAttribute('role') === 'button') {
+            tooltip = el.textContent.trim() || el.getAttribute('aria-label') || 'Button';
           } else if (el.tagName === 'INPUT') {
-            tooltip = el.placeholder || el.type || 'Input field';
+            tooltip = el.placeholder || el.value || el.type || 'Input field';
           }
           if (tooltip) {
-            el.title = tooltip.substring(0, 100); // Limit tooltip length
+            el.title = tooltip.substring(0, 150); // Limit tooltip length slightly more
+            el.setAttribute(tooltipMarker, 'true');
           }
         }
       });
     } else {
-      // Remove auto-generated tooltips (this is basic - in practice we'd need to track which ones we added)
-      document.querySelectorAll('[title]').forEach(el => {
-        if (el.title.length <= 100 && (
-          el.title === 'Image' || 
-          el.title === 'Link' || 
-          el.title === 'Button' ||
-          el.title.includes('Input field')
-        )) {
-          el.removeAttribute('title');
-        }
+      document.querySelectorAll(`[${tooltipMarker}]`).forEach(el => {
+        el.removeAttribute('title');
+        el.removeAttribute(tooltipMarker);
       });
     }
   }
@@ -249,6 +286,55 @@ class AccessibilityManager {
     } else {
       this.removeCSS(id);
     }
+  }
+
+  // Helper to convert image to base64
+  getImageBase64(img) {
+    return new Promise((resolve, reject) => {
+      const imgEl = new window.Image();
+      imgEl.crossOrigin = 'Anonymous';
+      imgEl.onload = function() {
+        const canvas = document.createElement('canvas');
+        canvas.width = imgEl.width;
+        canvas.height = imgEl.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(imgEl, 0, 0);
+        resolve(canvas.toDataURL('image/png').split(',')[1]); // base64 part only
+      };
+      imgEl.onerror = reject;
+      imgEl.src = img.src;
+    });
+  }
+
+  // Generate alt text for images without alt, and return results (skipping tainted images)
+  async generateAltTextForImages() {
+    const images = Array.from(document.querySelectorAll('img'));
+    const missingAltImages = images.filter(img => !img.hasAttribute('alt') || img.alt.trim() === '');
+    const results = [];
+    const skipped = [];
+    for (const img of missingAltImages) {
+      try {
+        const base64 = await this.getImageBase64(img);
+        const altText = await new Promise((resolve, reject) => {
+          chrome.runtime.sendMessage({
+            type: 'generateAltText',
+            imgBase64: base64
+          }, (response) => {
+            if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
+            if (response && response.altText) resolve(response.altText);
+            else reject(new Error('No alt text returned'));
+          });
+        });
+        if (altText) img.alt = altText;
+        results.push({ src: img.src, alt: altText });
+      } catch (e) {
+        // Tainted image or other error
+        skipped.push(img.src);
+      }
+    }
+    // Send results and skipped to panel for chat display
+    chrome.runtime.sendMessage({ type: 'altTextResults', results, skipped });
+    return { results, skipped };
   }
 
   // Apply all settings
@@ -282,6 +368,49 @@ class AccessibilityManager {
     document.querySelectorAll('audio, video').forEach(el => {
       el.muted = false;
     });
+    
+    // Remove any tooltips we added
+    document.querySelectorAll('[data-browseeasy-tooltip]').forEach(el => {
+      el.removeAttribute('title');
+      el.removeAttribute('data-browseeasy-tooltip');
+    });
+  }
+
+  // Debug function to check what styles are currently applied
+  getAppliedStyles() {
+    return {
+      appliedStyleIds: [...this.appliedStyles],
+      activeStyleElements: this.appliedStyles.map(id => {
+        const element = document.getElementById(id);
+        return {
+          id: id,
+          exists: !!element,
+          content: element ? element.textContent.substring(0, 100) + '...' : null
+        };
+      }),
+      observersCount: this.observers.length
+    };
+  }
+
+  // Force remove all BrowseEasy styles (emergency cleanup)
+  forceCleanup() {
+    // Remove all style elements with BrowseEasy IDs
+    document.querySelectorAll('style[id*="browse-easy"]').forEach(style => {
+      style.remove();
+    });
+    
+    // Clear our tracking arrays
+    this.appliedStyles = [];
+    this.observers.forEach(observer => observer.disconnect());
+    this.observers = [];
+    
+    // Remove tooltips
+    document.querySelectorAll('[data-browseeasy-tooltip]').forEach(el => {
+      el.removeAttribute('title');
+      el.removeAttribute('data-browseeasy-tooltip');
+    });
+    
+    console.log('[BrowseEasy] Force cleanup completed');
   }
 
   // Tool calling interface for AI integration
@@ -319,6 +448,9 @@ class AccessibilityManager {
         break;
       case 'adjustContrast':
         this.adjustContrast(parameters.contrast);
+        break;
+      case 'generateAltTextForImages':
+        this.generateAltTextForImages();
         break;
       default:
         console.warn('Unknown accessibility function:', functionName);

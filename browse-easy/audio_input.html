@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BrowseEasy Audio Input</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 250px;
+            height: 200px;
+            margin: 0;
+            background-color: #f9f9f9;
+        }
+        #recordButton {
+            padding: 15px 25px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 50px;
+            background-color: #007bff;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        #recordButton.recording {
+            background-color: #dc3545; /* Red when recording */
+        }
+        #statusMessage {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <button id="recordButton">Record</button>
+    <p id="statusMessage">Click Record to start.</p>
+    <script src="config.js"></script>
+    <script src="audio_input.js"></script>
+</body>
+</html> 

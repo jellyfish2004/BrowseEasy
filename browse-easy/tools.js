@@ -161,6 +161,15 @@ const ACCESSIBILITY_TOOLS = [
       },
       "required": ["contrast"]
     }
+  },
+  {
+    "name": "generateAltTextForImages",
+    "description": "Generate and set alt text for all images missing alt text using AI",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
   }
 ];
 

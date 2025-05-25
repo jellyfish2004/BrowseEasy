@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrowseEasy Style Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .debug-info {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .element-test {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>BrowseEasy Style Debug Page</h1>
+    
+    <div class="debug-info">
+        <strong>Purpose:</strong> This page helps debug unwanted orange outlines/borders on elements.<br>
+        <strong>Instructions:</strong> 
+        <ol>
+            <li>Make sure NO BrowseEasy settings are enabled</li>
+            <li>Look at the elements below - they should have NO orange styling</li>
+            <li>If you see orange outlines/borders, check the browser console for debug info</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Elements</h2>
+        
+        <div class="element-test">
+            <strong>Button:</strong>
+            <button id="test-button">Test Button</button>
+        </div>
+        
+        <div class="element-test">
+            <strong>Link:</strong>
+            <a href="#" id="test-link">Test Link</a>
+        </div>
+        
+        <div class="element-test">
+            <strong>Input:</strong>
+            <input type="text" id="test-input" placeholder="Test Input">
+        </div>
+        
+        <div class="element-test">
+            <strong>Select:</strong>
+            <select id="test-select">
+                <option>Test Option</option>
+            </select>
+        </div>
+        
+        <div class="element-test">
+            <strong>Textarea:</strong>
+            <textarea id="test-textarea" placeholder="Test Textarea"></textarea>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Debug Information</h2>
+        <button onclick="debugStyles()" style="padding: 10px 20px; background: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Check Element Styles
+        </button>
+        <div id="debug-output" style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 4px; font-family: monospace; white-space: pre-wrap;"></div>
+    </div>
+
+    <script>
+        function debugStyles() {
+            const output = document.getElementById('debug-output');
+            let debugInfo = 'BrowseEasy Style Debug Report:\n\n';
+            
+            // Check if BrowseEasy is loaded
+            if (window.browseEasyDebug) {
+                const status = window.browseEasyDebug.getStatus();
+                debugInfo += 'BrowseEasy Status: ' + JSON.stringify(status, null, 2) + '\n\n';
+            } else {
+                debugInfo += 'BrowseEasy: Not detected\n\n';
+            }
+            
+            // Check for BrowseEasy style elements
+            const browseEasyStyles = document.querySelectorAll('style[id*="browse-easy"]');
+            debugInfo += `BrowseEasy Style Elements Found: ${browseEasyStyles.length}\n`;
+            browseEasyStyles.forEach((style, index) => {
+                debugInfo += `  ${index + 1}. ID: ${style.id}\n`;
+                debugInfo += `     Content: ${style.textContent.substring(0, 100)}...\n`;
+            });
+            debugInfo += '\n';
+            
+            // Check specific test elements
+            const testElements = ['test-button', 'test-link', 'test-input', 'test-select', 'test-textarea'];
+            testElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    const computedStyle = window.getComputedStyle(element);
+                    debugInfo += `${id}:\n`;
+                    debugInfo += `  outline: ${computedStyle.outline}\n`;
+                    debugInfo += `  border: ${computedStyle.border}\n`;
+                    debugInfo += `  background: ${computedStyle.backgroundColor}\n`;
+                    debugInfo += `  box-shadow: ${computedStyle.boxShadow}\n\n`;
+                }
+            });
+            
+            // Check for any elements with orange styling
+            const allElements = document.querySelectorAll('*');
+            let orangeElements = [];
+            allElements.forEach(el => {
+                const style = window.getComputedStyle(el);
+                if (style.outline.includes('ff6600') || 
+                    style.border.includes('ff6600') || 
+                    style.backgroundColor.includes('yellow') ||
+                    style.outline.includes('orange') ||
+                    style.border.includes('orange')) {
+                    orangeElements.push({
+                        tag: el.tagName,
+                        id: el.id,
+                        class: el.className,
+                        outline: style.outline,
+                        border: style.border,
+                        background: style.backgroundColor
+                    });
+                }
+            });
+            
+            if (orangeElements.length > 0) {
+                debugInfo += 'Elements with Orange/Yellow Styling:\n';
+                orangeElements.forEach((el, index) => {
+                    debugInfo += `  ${index + 1}. ${el.tag}${el.id ? '#' + el.id : ''}${el.class ? '.' + el.class : ''}\n`;
+                    debugInfo += `     outline: ${el.outline}\n`;
+                    debugInfo += `     border: ${el.border}\n`;
+                    debugInfo += `     background: ${el.background}\n\n`;
+                });
+            } else {
+                debugInfo += 'No elements found with orange/yellow styling.\n';
+            }
+            
+            output.textContent = debugInfo;
+        }
+        
+        // Auto-run debug on page load
+        window.addEventListener('load', () => {
+            setTimeout(debugStyles, 1000);
+        });
+        
+        // Log when page loads
+        console.log('BrowseEasy Style Debug page loaded');
+        
+        // Check if extension is available after a short delay
+        setTimeout(() => {
+            if (window.browseEasyDebug) {
+                console.log('BrowseEasy extension detected');
+                console.log('Status:', window.browseEasyDebug.getStatus());
+            } else {
+                console.log('BrowseEasy extension not detected');
+            }
+        }, 1000);
+    </script>
+</body>
+</html> 
