@@ -108,96 +108,120 @@
 
   // Listen for messages from the panel/background script
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    log('Received message:', message.type, 'from:', sender.id || 'unknown');
+    log('Received message:', message.type, 'from:', sender.id || 'unknown', 'data:', message);
     
     if (!accessibilityManager || !settingsManager) {
       const errorMsg = 'Accessibility manager not initialized';
       error(errorMsg);
       sendResponse({ error: errorMsg });
-      return false;
+      return false; // Still synchronous if managers not init
     }
 
-    try {
-      switch (message.type) {
-        case 'ping':
-          log('Ping received');
-          sendResponse({ success: true, ready: true });
-          break;
+    // Make the main try block async to handle awaiting results
+    (async () => {
+      try {
+        switch (message.type) {
+          case 'ping':
+            log('Ping received');
+            sendResponse({ success: true, ready: true });
+            break;
 
-        case 'applySettings':
-          log('Applying settings:', message.settings);
-          accessibilityManager.applySettings(message.settings);
-          sendResponse({ success: true });
-          break;
-
-        case 'executeFunction':
-          log('Executing function:', message.functionName, 'with params:', message.parameters);
-          accessibilityManager.executeFunction(message.functionName, message.parameters);
-          sendResponse({ success: true });
-          break;
-
-        case 'updateSetting':
-          log('Updating single setting:', message.key, '=', message.value);
-          settingsManager.saveSettings({ [message.key]: message.value }).then(() => {
+          case 'applySettings':
+            log('Applying settings:', message.settings);
+            accessibilityManager.applySettings(message.settings);
             sendResponse({ success: true });
-          }).catch(err => {
-            error('Failed to update setting:', err);
-            sendResponse({ error: err.message });
-          });
-          return true; // Will respond asynchronously
+            break;
 
-        case 'updateSettings':
-          log('Updating multiple settings:', message.settings);
-          settingsManager.saveSettings(message.settings).then(() => {
-            // Apply the updated settings to the accessibility manager
-            const allSettings = settingsManager.getAllSettings();
-            accessibilityManager.applySettings(allSettings);
+          case 'executeFunction':
+            log('Executing function:', message.functionName, 'with params:', message.parameters);
+            const result = await accessibilityManager.executeFunction(message.functionName, message.parameters); // Await the result
+            
+            if (message.functionName === 'generateMissingAltTexts') {
+              log('Image list from generateMissingAltTexts (awaited):', result);
+              sendResponse({ success: true, action: 'processImagesForAltText', data: result });
+            } else {
+              sendResponse({ success: true }); 
+            }
+            break;
+          
+          case 'applySingleAltText': 
+            log('Applying single alt text:', message.imageId, message.altText, message.targetAttribute);
+            if (message.imageId && message.altText !== undefined && message.targetAttribute) {
+              accessibilityManager.applyGeneratedAltText(message.imageId, message.altText, message.targetAttribute);
+              sendResponse({ success: true });
+            } else {
+              error('Missing imageId, altText, or targetAttribute for applySingleAltText');
+              sendResponse({ success: false, error: 'Missing imageId, altText, or targetAttribute' });
+            }
+            break;
+
+          case 'updateSetting':
+            log('Updating single setting:', message.key, '=', message.value);
+            // saveSettings is already async, so this is fine
+            settingsManager.saveSettings({ [message.key]: message.value })
+              .then(() => sendResponse({ success: true }))
+              .catch(err => {
+                error('Failed to update setting:', err);
+                sendResponse({ error: err.message });
+              });
+            // No need to return true here if the main wrapper returns true
+            break; 
+
+          case 'updateSettings':
+            log('Updating multiple settings:', message.settings);
+            settingsManager.saveSettings(message.settings)
+              .then(() => {
+                const allSettings = settingsManager.getAllSettings();
+                accessibilityManager.applySettings(allSettings);
+                sendResponse({ success: true });
+              })
+              .catch(err => {
+                error('Failed to update settings:', err);
+                sendResponse({ error: err.message });
+              });
+            break;
+
+          case 'getSettings':
+            try {
+              const settings = settingsManager.getAllSettings();
+              log('Returning settings:', settings);
+              sendResponse({ settings });
+            } catch (err) {
+              error('Failed to get settings:', err);
+              sendResponse({ error: err.message });
+            }
+            break;
+
+          case 'getPageContent':
+            // extractPageContent is synchronous
+            try {
+              const pageContent = extractPageContent();
+              log('Extracted page content, length:', pageContent.text.length);
+              sendResponse({ success: true, content: pageContent });
+            } catch (err) {
+              error('Failed to extract page content:', err);
+              sendResponse({ error: err.message });
+            }
+            break;
+
+          case 'clearAll':
+            log('Clearing all accessibility settings');
+            accessibilityManager.clearAll();
             sendResponse({ success: true });
-          }).catch(err => {
-            error('Failed to update settings:', err);
-            sendResponse({ error: err.message });
-          });
-          return true; // Will respond asynchronously
+            break;
 
-        case 'getSettings':
-          try {
-            const settings = settingsManager.getAllSettings();
-            log('Returning settings:', settings);
-            sendResponse({ settings });
-          } catch (err) {
-            error('Failed to get settings:', err);
-            sendResponse({ error: err.message });
-          }
-          break;
-
-        case 'getPageContent':
-          try {
-            const pageContent = extractPageContent();
-            log('Extracted page content, length:', pageContent.text.length);
-            sendResponse({ success: true, content: pageContent });
-          } catch (err) {
-            error('Failed to extract page content:', err);
-            sendResponse({ error: err.message });
-          }
-          break;
-
-        case 'clearAll':
-          log('Clearing all accessibility settings');
-          accessibilityManager.clearAll();
-          sendResponse({ success: true });
-          break;
-
-        default:
-          const errorMsg = `Unknown message type: ${message.type}`;
-          error(errorMsg);
-          sendResponse({ error: errorMsg });
+          default:
+            const errorMsgSwitch = `Unknown message type: ${message.type}`;
+            error(errorMsgSwitch);
+            sendResponse({ error: errorMsgSwitch });
+        }
+      } catch (err) {
+        error('Error handling message:', err);
+        sendResponse({ error: err.message });
       }
-    } catch (err) {
-      error('Error handling message:', err);
-      sendResponse({ error: err.message });
-    }
+    })(); // Immediately invoke the async function
     
-    return false; // Don't keep the message port open unless explicitly returning true
+    return true; // Crucial: Indicate that sendResponse will be called asynchronously for ALL cases now handled by the async IIFE.
   });
 
   // Function to extract meaningful content from the current webpage

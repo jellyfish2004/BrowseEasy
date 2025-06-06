@@ -452,8 +452,110 @@ class AccessibilityManager {
       case 'generateAltTextForImages':
         this.generateAltTextForImages();
         break;
+      case 'generateMissingAltTexts':
+        if (parameters.enabled) {
+          return this.initiateGenerateAltTexts();
+        }
+        break;
       default:
         console.warn('Unknown accessibility function:', functionName);
+    }
+  }
+
+  // 12. Generate Missing Alt Texts (Initiation)
+  async initiateGenerateAltTexts() {
+    console.log('[AccessibilityManager] Initiating generation of missing alt texts...');
+    const elementsToProcess = [];
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'];
+
+    // Process <img> tags
+    document.querySelectorAll('img').forEach((img, index) => {
+      let currentDescription = img.getAttribute('alt') || '';
+      let sourceUrl = img.src;
+      const uniqueId = `browseeasy-img-${Date.now()}-${index}`;
+      let needsAltText = false;
+
+      if (!img.hasAttribute('data-browseeasy-generated-alt') && 
+          (currentDescription.trim().length < 3 || currentDescription.toLowerCase() === 'image' || currentDescription.toLowerCase() === 'icon')) {
+        needsAltText = true;
+      }
+
+      if (needsAltText) {
+        let resolvedSrc = sourceUrl;
+        if (sourceUrl && !sourceUrl.startsWith('http') && !sourceUrl.startsWith('data:')) {
+          try {
+            const urlObj = new URL(sourceUrl, window.location.href);
+            resolvedSrc = urlObj.href;
+          } catch (e) {
+            console.warn(`[IMG] Could not resolve relative URL: ${sourceUrl}`, e);
+            if (!sourceUrl.startsWith('data:')) return; // Skip if not resolvable and not data URI
+          }
+        }
+        if (resolvedSrc && (resolvedSrc.startsWith('http') || resolvedSrc.startsWith('data:'))) {
+          img.setAttribute('data-browseeasy-img-id', uniqueId);
+          elementsToProcess.push({ id: uniqueId, src: resolvedSrc, originalTag: 'IMG', targetAttribute: 'alt' });
+        } else {
+          console.warn('[IMG] Skipping image with invalid/unresolvable src:', sourceUrl);
+        }
+      }
+    });
+
+    // Process <a> tags linking to images
+    document.querySelectorAll('a[href]').forEach((a, index) => {
+      const href = a.href.toLowerCase();
+      const linksToImage = imageExtensions.some(ext => href.endsWith(ext));
+
+      if (linksToImage) {
+        let targetAttribute = 'aria-label';
+        let currentDescription = a.getAttribute('aria-label') || a.textContent || '';
+        let sourceUrl = a.href; // Use the original href for the API call
+        const uniqueId = `browseeasy-a-${Date.now()}-${index}`;
+        let needsAltText = false;
+
+        if (!a.hasAttribute('data-browseeasy-generated-alt') && 
+            (currentDescription.trim().length < 5 || currentDescription.toLowerCase() === 'image' || currentDescription.toLowerCase() === 'link')) {
+          let hasMeaningfulChildContent = false;
+          a.childNodes.forEach(child => {
+            if (child.nodeType === Node.TEXT_NODE && child.textContent.trim().length > 5) hasMeaningfulChildContent = true;
+            if (child.nodeType === Node.ELEMENT_NODE && child.tagName !== 'IMG' && child.textContent.trim().length > 5) hasMeaningfulChildContent = true;
+          });
+          if (!hasMeaningfulChildContent) needsAltText = true;
+        }
+
+        if (needsAltText) {
+            // For <a> tags, href is already absolute.
+            if (sourceUrl && (sourceUrl.startsWith('http') || sourceUrl.startsWith('data:'))) {
+                a.setAttribute('data-browseeasy-img-id', uniqueId);
+                elementsToProcess.push({ id: uniqueId, src: sourceUrl, originalTag: 'A', targetAttribute: 'aria-label' });
+            } else {
+                 console.warn('[A] Skipping link with invalid/unresolvable href:', sourceUrl);
+            }
+        }
+      }
+    });
+
+    if (elementsToProcess.length > 0) {
+      console.log(`[AccessibilityManager] Found ${elementsToProcess.length} elements to process for alt text. Requesting generation.`);
+      return elementsToProcess;
+    } else {
+      console.log('[AccessibilityManager] No elements found needing alt text generation.');
+      return [];
+    }
+  }
+
+  // Method to apply generated alt text (called by content.js)
+  applyGeneratedAltText(elementId, altText, targetAttribute = 'alt') { 
+    const element = document.querySelector(`[data-browseeasy-img-id="${elementId}"]`);
+    if (element) {
+      if (altText === '' && element.tagName === 'IMG') { // Handle decorative images for <img> explicitly
+        element.setAttribute('alt', ''); 
+      } else {
+        element.setAttribute(targetAttribute, altText);
+      }
+      element.setAttribute('data-browseeasy-generated-alt', 'true');
+      console.log(`[AccessibilityManager] Applied ${targetAttribute}="${altText}" to element ${elementId}`);
+    } else {
+      console.warn(`[AccessibilityManager] Could not find element with ID ${elementId} to apply alt text.`);
     }
   }
 }

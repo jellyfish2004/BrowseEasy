@@ -163,12 +163,17 @@ const ACCESSIBILITY_TOOLS = [
     }
   },
   {
-    "name": "generateAltTextForImages",
-    "description": "Generate and set alt text for all images missing alt text using AI",
+    "name": "generateMissingAltTexts",
+    "description": "Scans the page for images missing descriptive alt text and generates it using AI. This may take a few moments for pages with many images.",
     "parameters": {
       "type": "object",
-      "properties": {},
-      "required": []
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Set to true to initiate the generation of missing alt texts."
+        }
+      },
+      "required": ["enabled"]
     }
   }
 ];

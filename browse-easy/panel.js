@@ -21,6 +21,8 @@ let currentTheme = 'light'; // Default theme
 let contentSharingEnabled = false;
 let currentPageContent = null;
 
+let currentTTSAudio = null; // To manage currently playing TTS audio
+
 // Load saved theme preference
 async function loadTheme() {
   try {
@@ -191,6 +193,188 @@ inputEl.addEventListener('keydown', async e => {
   }
 });
 
+async function speakTextWithSarvam(text) {
+  if (!text || text.trim().length === 0) {
+    console.log('[TTS] No text to speak.');
+    return;
+  }
+  if (!window.config || !window.config.SARVAM_API_KEY) {
+    console.error('[TTS] Sarvam API key not found.');
+    return;
+  }
+
+  if (currentTTSAudio && currentTTSAudio.source) {
+    try {
+      console.log('[TTS] Stopping previous audio.');
+      currentTTSAudio.source.stop();
+      if (currentTTSAudio.context && currentTTSAudio.context.state !== 'closed') {
+        // currentTTSAudio.context.close(); // Optionally close context if creating new one each time
+      }
+    } catch (e) {
+      console.warn('[TTS] Could not stop previous audio:', e);
+    }
+    currentTTSAudio = null;
+  }
+
+  const requestBody = {
+    text: text.substring(0, 1499),
+    model: "bulbul:v2",
+    speaker: "anushka",
+    target_language_code: "en-IN"
+  };
+  console.log('[TTS] Requesting TTS with body:', JSON.stringify(requestBody));
+
+  try {
+    const response = await fetch('https://api.sarvam.ai/text-to-speech', {
+      method: 'POST',
+      headers: {
+        'api-subscription-key': window.config.SARVAM_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    console.log(`[TTS] API Response Status: ${response.status}`);
+    // response.headers.forEach((value, name) => console.log(`[TTS] Response Header: ${name}: ${value}`));
+
+    if (!response.ok) {
+      let errorData = {};
+      try {
+        errorData = await response.json();
+        console.error('[TTS] API Error Data:', errorData);
+      } catch (e) {
+        console.error('[TTS] Could not parse error JSON from API.');
+      }
+      throw new Error(`Sarvam TTS API Error (${response.status}): ${errorData.message || errorData.detail || 'Failed to fetch TTS'}`);
+    }
+
+    const result = await response.json();
+    console.log('[TTS] API Result:', result);
+
+    if (result.audios && result.audios.length > 0 && result.audios[0]) {
+      const base64Audio = result.audios[0];
+      console.log('[TTS] Received base64 audio string (first ~100 chars):', base64Audio.substring(0,100));
+      
+      const audioData = Uint8Array.from(atob(base64Audio), c => c.charCodeAt(0)).buffer;
+      console.log('[TTS] Converted base64 to ArrayBuffer, length:', audioData.byteLength);
+      
+      // Ensure we have a valid AudioContext
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      console.log('[TTS] AudioContext state:', audioContext.state);
+
+      const audioBuffer = await audioContext.decodeAudioData(audioData);
+      console.log('[TTS] Decoded ArrayBuffer to AudioBuffer, duration:', audioBuffer.duration);
+      
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContext.destination);
+      console.log('[TTS] Starting audio playback...');
+      source.start(0);
+
+      currentTTSAudio = { source, context: audioContext };
+      source.onended = () => {
+          console.log('[TTS] Audio playback ended.');
+          if (currentTTSAudio && currentTTSAudio.source === source) {
+              currentTTSAudio = null;
+          }
+          // if (audioContext.state !== 'closed') audioContext.close(); // Consider closing context here
+      };
+
+    } else {
+      console.error('[TTS] Sarvam TTS API did not return valid audio data in .audios array.', result.audios);
+      throw new Error('No audio data received from Sarvam TTS API.');
+    }
+  } catch (error) {
+    console.error('[TTS] Error during Sarvam TTS processing:', error);
+    // append('error', `TTS Error: ${error.message}`); 
+  }
+}
+
+// Function to call Gemini for a single image URL to get alt text
+async function generateAltTextForImageWithGemini(imageUrl, imageId, imageDetails) {
+  console.log(`[PanelJS] Requesting alt text for image ID ${imageId}: ${imageUrl}`);
+  append('bot', `⏳ Generating alt text for image (${imageId.split('-').pop()})...`); // Simple progress update
+
+  // Construct the multimodal request for Gemini
+  // IMPORTANT: This assumes Gemini API (gemini-2.0-flash:generateContent) supports file_uri.
+  // If not, this part needs significant rework (e.g., content script fetches image as base64).
+  const requestBody = {
+    contents: [{
+      parts: [
+        { text: "Generate a concise and descriptive alt text for this image (max 120 characters). If the image is purely decorative or a spacer, respond with 'decorative'." },
+        { file_data: { mime_type: "image/jpg", file_uri: imageUrl } } // Assuming JPEG, may need to infer or try common types
+      ]
+    }],
+    // We don't need accessibility tools for this specific call
+    // tools: [ { function_declarations: ACCESSIBILITY_TOOLS } ] 
+    generation_config: {
+        max_output_tokens: 60, // Limit token output for alt text
+    }
+  };
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${window.config.GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      console.error(`[PanelJS] Gemini Vision API error for ${imageId}:`, res.status, errorData);
+      throw new Error(`Gemini Vision API error (${res.status}) for ${imageId}`);
+    }
+
+    const data = await res.json();
+    const candidate = data.candidates?.[0];
+    const textPart = candidate?.content?.parts?.find(part => part.text);
+    let description = textPart?.text?.trim() || 'Unable to describe image.';
+
+    console.log(`[PanelJS] Generated alt text for ${imageId} (${imageUrl}): ${description}`);
+    
+    if (description.toLowerCase() === 'decorative') {
+        description = ''; // Set empty alt for decorative images as per best practice
+    }
+
+    // Send this description back to the content script to apply
+    await chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          type: 'applySingleAltText',
+          imageId: imageId,
+          altText: description,
+          targetAttribute: imageDetails.targetAttribute
+        });
+      }
+    });
+    return { imageId, description }; // Return for potential further UI updates
+
+  } catch (error) {
+    console.error(`[PanelJS] Failed to generate alt text for ${imageId} (${imageUrl}):`, error);
+    append('error', `Failed to get alt text for image (${imageId.split('-').pop()}).`);
+    // Optionally send a message to content script to mark as failed or skip
+    return { imageId, description: null, error: error.message };
+  }
+}
+
+// Modify how tools.js interacts or how responses are handled for this specific tool.
+// The current `executeAccessibilityTool` in `tools.js` sends a message to content script and expects a simple success/error.
+// For `generateMissingAltTexts`, `content.js` now sends back { success: true, action: 'processImagesForAltText', data: imageList }.
+// We need to handle this in `panel.js` after the AI calls the tool.
+
+// In sendToGemini, after a tool call is identified:
+// ... inside sendToGemini, in the part that handles functionCalls from Gemini ...
+// if (functionCalls && functionCalls.length > 0) {
+//    ... existing loop ...
+//    for (const functionCall of functionCalls) {
+//        const result = await executeAccessibilityTool(functionCall.name, functionCall.args);
+//        // NOW, if result.action === 'processImagesForAltText' && result.data,
+//        // trigger the loop for generateAltTextForImageWithGemini
+//    }
+// ...
+// }
+
+// Let's adjust `sendToGemini` and how it processes tool results to accommodate this.
 async function sendToGemini(userMessage) {
   const systemPromptText = `You are BrowseEasy, an AI assistant that helps make web pages more accessible. You have access to tools that can modify the current webpage to improve accessibility.
 
@@ -303,68 +487,77 @@ User request: ${userMessage}`;
 
   const functionCalls = candidate.content?.parts?.filter(part => part.functionCall);
   const textPart = candidate.content?.parts?.find(part => part.text);
-  let aiTextResponse = textPart?.text || '';
+  let plainTextForTTS = textPart?.text || '';
+  console.log('[PanelJS] plainTextForTTS from Gemini before TTS call:', JSON.stringify(plainTextForTTS));
 
   if (functionCalls && functionCalls.length > 0) {
-    let toolResults = [];
-    
+    let toolExecutionSummaries = []; // For the main chat response
+
     for (const functionCall of functionCalls) {
       try {
-        const result = await executeAccessibilityTool(
+        // `executeAccessibilityTool` is in tools.js and sends message to content script
+        const toolResponseFromContentScript = await executeAccessibilityTool(
           functionCall.functionCall.name,
           functionCall.functionCall.args
         );
         
-        // Save settings when tools are executed via AI chat
-        await saveSettingsFromToolExecution(functionCall.functionCall.name, functionCall.functionCall.args);
-        
-        toolResults.push({
-          name: functionCall.functionCall.name,
-          success: true,
-          result: result
-        });
+        toolExecutionSummaries.push({ name: functionCall.functionCall.name, success: true, result: toolResponseFromContentScript });
+
+        // ** Handle the image list returned from content script for alt text generation **
+        if (toolResponseFromContentScript && toolResponseFromContentScript.action === 'processImagesForAltText' && toolResponseFromContentScript.data) {
+          const imagesToProcess = toolResponseFromContentScript.data;
+          if (imagesToProcess.length > 0) {
+            append('bot', `Found ${imagesToProcess.length} image(s) without alt text. Starting generation...`);
+            let generatedCount = 0;
+            for (const imageDetails of imagesToProcess) {
+              const altTextResult = await generateAltTextForImageWithGemini(imageDetails.src, imageDetails.id, imageDetails);
+              if (altTextResult && altTextResult.description !== null) generatedCount++;
+            }
+            append('bot', `✅ Finished: Generated alt text for ${generatedCount} of ${imagesToProcess.length} image(s).`);
+            // This specific tool call's primary feedback is handled above, not in the generic summary.
+            // We might remove it from toolExecutionSummaries or just let it be.
+          } else {
+            append('bot', 'No images found needing alt text generation on the page.');
+          }
+        }
       } catch (error) {
-        toolResults.push({
-          name: functionCall.functionCall.name,
-          success: false,
-          error: error.message
-        });
+        console.error(`Error executing tool ${functionCall.functionCall.name}:`, error);
+        toolExecutionSummaries.push({ name: functionCall.functionCall.name, success: false, error: error.message });
       }
     }
-
-    if (toolResults.length > 0) {
-      appliedToolsHtml = '<div class="applied-tools-summary"><h4>Tools Executed:</h4><ul>';
-      toolResults.forEach(result => {
-        if (result.success) {
-          appliedToolsHtml += `<li class="tool-success">✅ ${result.name}</li>`;
-        } else {
-          appliedToolsHtml += `<li class="tool-failure">❌ ${result.name}: ${result.error}</li>`;
-        }
-      });
-      appliedToolsHtml += '</ul></div>';
-      
-      // Re-render settings grid to reflect changes
-      renderSettingsGrid(currentSettings);
-    }
-
-    // Construct botResponseText for display
-    if (aiTextResponse && appliedToolsHtml) botResponseText = `${aiTextResponse}\n\n${appliedToolsHtml}`;
-    else if (aiTextResponse) botResponseText = aiTextResponse;
-    else if (appliedToolsHtml) botResponseText = appliedToolsHtml;
-    else botResponseText = 'Accessibility adjustments applied!';
-
-  } else {
-    if (contentSharingEnabled && currentPageContent) {
-      botResponseText = aiTextResponse || 'I can help you with this page! I can see the content and apply accessibility improvements, or answer questions about what\'s on the page.';
-    } else {
-      botResponseText = aiTextResponse || 'I can help you make this page more accessible. Try asking me to make it more readable, highlight links, or adjust the size! You can also enable "Share current page content" to let me answer questions about the page.';
+    // Create appliedToolsHtml from toolExecutionSummaries (excluding detailed alt text messages already sent)
+    if (toolExecutionSummaries.some(s => s.name !== 'generateMissingAltTexts' || !s.success)) { // Only show summary if other tools ran or alt text failed generally
+        appliedToolsHtml = '<div class="applied-tools-summary"><h4>Tools Executed:</h4><ul>';
+        toolExecutionSummaries.forEach(result => {
+            if (result.name === 'generateMissingAltTexts') return; // Already handled with detailed messages
+            appliedToolsHtml += `<li class="${result.success ? 'tool-success' : 'tool-failure'}">${result.success ? '✅' : '❌'} ${result.name}${result.success ? '' : ': ' + result.error}</li>`;
+        });
+        appliedToolsHtml += '</ul></div>';
+        if (appliedToolsHtml === '<div class="applied-tools-summary"><h4>Tools Executed:</h4><ul></ul></div>') appliedToolsHtml = ''; // Clear if empty
     }
   }
-  
-  // If botResponseForHistory is undefined or doesn't have role, construct it.
-  // Gemini API response candidate.content should already be in the correct format {role: "model", parts: [...]}
+
+  // Construct botResponseText for display
+  if (plainTextForTTS && appliedToolsHtml) botResponseText = `${plainTextForTTS}\n\n${appliedToolsHtml}`;
+  else if (plainTextForTTS) botResponseText = plainTextForTTS;
+  else if (appliedToolsHtml) botResponseText = appliedToolsHtml;
+  else if (!(functionCalls && functionCalls.some(fc => fc.functionCall.name === 'generateMissingAltTexts'))) { // Don't show default if only alt text ran
+    botResponseText = 'Accessibility adjustments applied!';
+  }
+  // If plainTextForTTS is empty and functionCalls occurred, and no appliedToolsHtml, ensure no empty message.
+  if (!botResponseText && functionCalls && functionCalls.length > 0 && !appliedToolsHtml) {
+      botResponseText = 'Processing complete.'; // Generic message if nothing else to show
+  }
+
+  // History part
   if (!botResponseForHistory || !botResponseForHistory.role) {
-      botResponseForHistory = { role: "model", parts: candidate.content?.parts || [{text: botResponseText}] };
+      botResponseForHistory = { role: "model", parts: candidate.content?.parts || [{text: plainTextForTTS || botResponseText}] };
+  }
+
+  // Speak the plain text part of the main AI response (not the iterative alt text updates)
+  console.log('[PanelJS] Checking condition to speak: plainTextForTTS.trim().length > 0', plainTextForTTS.trim().length > 0);
+  if (plainTextForTTS.trim().length > 0) {
+    speakTextWithSarvam(plainTextForTTS);
   }
 
   return { botResponseText, botResponseForHistory };
