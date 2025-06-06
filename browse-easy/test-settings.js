@@ -10,7 +10,6 @@ const TEST_SETTINGS = {
   hideImages: true,              // Set to true to hide images
   cursorSize: 100,                // Change to 200 for larger cursor
   muteSound: false,               // Set to true to mute audio/video
-  textSpacing: 100,               // Change to 150 for more spacing
   highlightOnHover: false,        // Set to true to highlight on hover
   enlargeButtons: false,          // Set to true to make buttons bigger
   addTooltips: false,             // Set to true to add tooltips

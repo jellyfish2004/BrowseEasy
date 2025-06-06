@@ -6,10 +6,8 @@ const DEFAULT_SETTINGS = {
   hideImages: false,
   cursorSize: 100, // percentage
   muteSound: false,
-  textSpacing: 100, // percentage
   highlightOnHover: false,
   enlargeButtons: false,
-  addTooltips: false,
   adjustContrast: 100, // percentage
   enabled: true // master toggle
 };

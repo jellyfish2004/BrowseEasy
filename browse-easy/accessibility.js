@@ -30,16 +30,59 @@ class AccessibilityManager {
     if (enabled) {
       const css = `
         a, a:visited {
+          position: relative !important;
           background-color: yellow !important;
           color: black !important;
           text-decoration: underline !important;
           border: 2px solid #ff6600 !important;
           padding: 2px !important;
+          z-index: 10001 !important;
+          text-shadow: none !important;
+        }
+        /* For links with white or gray text, use a blue background and white text */
+        a.browse-easy-link-blue, a.browse-easy-link-blue:visited {
+          background-color: #1976d2 !important;
+          color: #fff !important;
+          border: 2px solid #ff6600 !important;
+          text-shadow: 0 1px 6px #000, 0 0 2px #fff;
         }
       `;
       this.injectCSS(css, id);
+      // Add the class to links with white or gray text (brightness > 180)
+      document.querySelectorAll('a, a:visited').forEach(link => {
+        const style = window.getComputedStyle(link);
+        const color = style.color;
+        // Parse rgb/rgba/hex
+        let r, g, b;
+        if (color.startsWith('rgb')) {
+          [r, g, b] = color.match(/\d+/g).map(Number);
+        } else if (color.startsWith('#')) {
+          if (color.length === 4) {
+            r = parseInt(color[1] + color[1], 16);
+            g = parseInt(color[2] + color[2], 16);
+            b = parseInt(color[3] + color[3], 16);
+          } else if (color.length === 7) {
+            r = parseInt(color.slice(1, 3), 16);
+            g = parseInt(color.slice(3, 5), 16);
+            b = parseInt(color.slice(5, 7), 16);
+          }
+        }
+        // If the color is white or gray (brightness > 180), use blue highlight
+        if (typeof r !== 'undefined' && typeof g !== 'undefined' && typeof b !== 'undefined') {
+          const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+          if (brightness > 180) {
+            link.classList.add('browse-easy-link-blue');
+          } else {
+            link.classList.remove('browse-easy-link-blue');
+          }
+        }
+      });
     } else {
       this.removeCSS(id);
+      // Remove the special class from all links
+      document.querySelectorAll('a.browse-easy-link-blue').forEach(link => {
+        link.classList.remove('browse-easy-link-blue');
+      });
     }
   }
 
@@ -141,37 +184,12 @@ class AccessibilityManager {
     }
   }
 
-  // 7. Adjust Text Spacing
-  adjustTextSpacing(spacing) {
-    const id = 'browse-easy-text-spacing';
-    const textElementsSelector = 'p, div, span, li, a, article, section, main, aside, header, footer, caption, td, th, label, h1, h2, h3, h4, h5, h6';
-    const blockElementsSelector = 'p, div, li, article, section, main, aside, header, footer, h1, h2, h3, h4, h5, h6';
-
-    if (spacing !== 100) {
-      const spaceMultiplier = Math.max(0.5, Math.min(3, spacing / 100)); // Clamp multiplier between 0.5 and 3
-      const css = `
-        ${textElementsSelector} {
-          line-height: calc(1.5em * ${spaceMultiplier}) !important; 
-          letter-spacing: calc(0.05em * ${spaceMultiplier}) !important;
-          word-spacing: calc(0.1em * ${spaceMultiplier}) !important;
-        }
-        ${blockElementsSelector} {
-          margin-bottom: calc(1em * ${spaceMultiplier}) !important;
-        }
-      `;
-      this.injectCSS(css, id);
-    } else {
-      this.removeCSS(id);
-    }
-  }
-
-  // 8. Highlight on Hover
+  // 7. Highlight on Hover
   highlightOnHover(enabled) {
     const id = 'browse-easy-highlight-hover';
     if (enabled) {
-      // Simple, reliable CSS that only applies on hover
+      // Accessible, visually appealing hover effect
       const css = `
-        /* Interactive elements - ONLY on hover */
         a:not([href=""]):not([href="#"]):hover,
         button:not([disabled]):hover,
         input:not([disabled]):not([type="hidden"]):hover,
@@ -185,34 +203,35 @@ class AccessibilityManager {
         [role="tab"]:not([aria-disabled="true"]):hover,
         [role="option"]:not([aria-disabled="true"]):hover,
         [tabindex]:not([tabindex="-1"]):not([disabled]):hover {
-          background-color: rgba(0, 150, 255, 0.2) !important;
-          outline: 2px dashed #0096ff !important;
-          outline-offset: 3px !important;
-          box-shadow: 0 0 10px rgba(0, 150, 255, 0.4) !important;
-          border-radius: 6px !important;
-          transition: all 0.15s ease-in-out !important;
+          background-color: rgba(25, 118, 210, 0.92) !important; /* #1976d2 */
+          outline: 3px solid #fff !important;
+          outline-offset: 2px !important;
+          box-shadow: 0 0 0 6px rgba(25, 118, 210, 0.25), 0 0 12px 2px #1976d2 !important;
+          border-radius: 8px !important;
+          transition: all 0.12s cubic-bezier(.4,2,.6,1) !important;
           position: relative !important;
-          z-index: 10000 !important;
+          z-index: 10002 !important;
+          transform: scale(1.04) !important;
+          color: #fff !important;
         }
-        
-        /* Special handling for links on hover */
         a:not([href=""]):not([href="#"]):hover {
-          background-color: rgba(0, 150, 255, 0.25) !important;
-          color: #003d82 !important;
+          background-color: rgba(25, 118, 210, 0.96) !important;
+          color: #fff !important;
           text-decoration: underline !important;
-          text-decoration-color: #0096ff !important;
-          text-decoration-thickness: 2px !important;
+          text-decoration-color: #fff !important;
+          text-decoration-thickness: 3px !important;
           border: none !important;
+          mix-blend-mode: normal !important;
+          text-shadow: 0 1px 4px #000, 0 0 2px #1976d2;
         }
-        
-        /* Special handling for buttons on hover */
         button:not([disabled]):hover,
         input[type="button"]:not([disabled]):hover,
         input[type="submit"]:not([disabled]):hover,
         input[type="reset"]:not([disabled]):hover,
         [role="button"]:not([aria-disabled="true"]):hover {
-          transform: scale(1.03) !important;
-          background-color: rgba(0, 150, 255, 0.15) !important;
+          transform: scale(1.07) !important;
+          background-color: rgba(25, 118, 210, 0.92) !important;
+          color: #fff !important;
         }
       `;
       this.injectCSS(css, id);
@@ -221,7 +240,7 @@ class AccessibilityManager {
     }
   }
 
-  // 9. Enlarge Buttons
+  // 8. Enlarge Buttons
   enlargeButtons(enabled) {
     const id = 'browse-easy-enlarge-buttons';
     if (enabled) {
@@ -242,37 +261,7 @@ class AccessibilityManager {
     }
   }
 
-  // 10. Add Tooltips
-  addTooltips(enabled) {
-    const tooltipMarker = 'data-browseeasy-tooltip';
-    if (enabled) {
-      document.querySelectorAll('img, button, a, input[type="button"], input[type="submit"], input[type="reset"], [role="button"], [role="link"]').forEach(el => {
-        if (!el.title && !el.getAttribute('aria-label') && !el.hasAttribute(tooltipMarker)) {
-          let tooltip = '';
-          if (el.tagName === 'IMG') {
-            tooltip = el.alt || 'Image';
-          } else if (el.tagName === 'A') {
-            tooltip = el.textContent.trim() || el.href || 'Link';
-          } else if (el.tagName === 'BUTTON' || el.getAttribute('role') === 'button') {
-            tooltip = el.textContent.trim() || el.getAttribute('aria-label') || 'Button';
-          } else if (el.tagName === 'INPUT') {
-            tooltip = el.placeholder || el.value || el.type || 'Input field';
-          }
-          if (tooltip) {
-            el.title = tooltip.substring(0, 150); // Limit tooltip length slightly more
-            el.setAttribute(tooltipMarker, 'true');
-          }
-        }
-      });
-    } else {
-      document.querySelectorAll(`[${tooltipMarker}]`).forEach(el => {
-        el.removeAttribute('title');
-        el.removeAttribute(tooltipMarker);
-      });
-    }
-  }
-
-  // 11. Adjust Contrast
+  // 10. Adjust Contrast
   adjustContrast(contrast) {
     const id = 'browse-easy-contrast';
     if (contrast !== 100) {
@@ -350,10 +339,8 @@ class AccessibilityManager {
     this.hideImages(settings.hideImages);
     this.adjustCursorSize(settings.cursorSize);
     this.muteSound(settings.muteSound);
-    this.adjustTextSpacing(settings.textSpacing);
     this.highlightOnHover(settings.highlightOnHover);
     this.enlargeButtons(settings.enlargeButtons);
-    this.addTooltips(settings.addTooltips);
     this.adjustContrast(settings.adjustContrast);
   }
 
@@ -434,17 +421,11 @@ class AccessibilityManager {
       case 'muteSound':
         this.muteSound(parameters.enabled);
         break;
-      case 'adjustTextSpacing':
-        this.adjustTextSpacing(parameters.spacing);
-        break;
       case 'highlightOnHover':
         this.highlightOnHover(parameters.enabled);
         break;
       case 'enlargeButtons':
         this.enlargeButtons(parameters.enabled);
-        break;
-      case 'addTooltips':
-        this.addTooltips(parameters.enabled);
         break;
       case 'adjustContrast':
         this.adjustContrast(parameters.contrast);

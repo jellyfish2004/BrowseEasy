@@ -418,10 +418,8 @@ settingsTab.addEventListener('click', async () => {
       hideImages: false,
       cursorSize: 100,
       muteSound: false,
-      textSpacing: 100,
       highlightOnHover: false,
       enlargeButtons: false,
-      addTooltips: false,
       adjustContrast: 100,
       enabled: true
     };
@@ -441,10 +439,8 @@ const TOOL_ICONS = {
   hideImages: '🚫',
   adjustCursorSize: '🖱️',
   muteSound: '🔇',
-  adjustTextSpacing: '↔️',
   highlightOnHover: '🖍️',
   enlargeButtons: '⬆️',
-  addTooltips: '💡',
   adjustContrast: '🌗'
 };
 
@@ -456,10 +452,8 @@ const TOOL_LABELS = {
   hideImages: 'Hide Images',
   adjustCursorSize: 'Big Cursor',
   muteSound: 'Mute All Sound',
-  adjustTextSpacing: 'Adjust Text Spacing',
   highlightOnHover: 'Highlight on Hover',
   enlargeButtons: 'Enlarge Buttons',
-  addTooltips: 'Add Tooltips',
   adjustContrast: 'Adjust Contrast',
   generateAltTextForImages: 'Generate Alt Text'
 };
@@ -521,17 +515,11 @@ async function saveSettingsFromToolExecution(toolName, parameters) {
       case 'muteSound':
         newSettings.muteSound = parameters.enabled;
         break;
-      case 'adjustTextSpacing':
-        newSettings.textSpacing = parameters.spacing;
-        break;
       case 'highlightOnHover':
         newSettings.highlightOnHover = parameters.enabled;
         break;
       case 'enlargeButtons':
         newSettings.enlargeButtons = parameters.enabled;
-        break;
-      case 'addTooltips':
-        newSettings.addTooltips = parameters.enabled;
         break;
       case 'adjustContrast':
         newSettings.adjustContrast = parameters.contrast;
@@ -616,19 +604,6 @@ function renderSettingsGrid(settings) {
           // Re-render grid with updated settings
           renderSettingsGrid(currentSettings);
         }
-      } else if (tool.parameters.properties.spacing) {
-        const spacing = prompt('Enter text spacing (50-300):', settings.textSpacing || 100);
-        if (spacing && !isNaN(spacing)) {
-          const spacingValue = Math.max(50, Math.min(300, Number(spacing)));
-          const newSettings = { textSpacing: spacingValue };
-          
-          // Save and apply settings
-          await saveAndApplySettings(newSettings);
-          await executeAccessibilityTool('adjustTextSpacing', { spacing: spacingValue });
-          
-          // Re-render grid with updated settings
-          renderSettingsGrid(currentSettings);
-        }
       } else if (tool.parameters.properties.contrast) {
         const contrast = prompt('Enter contrast (50-300):', settings.adjustContrast || 100);
         if (contrast && !isNaN(contrast)) {
@@ -646,6 +621,37 @@ function renderSettingsGrid(settings) {
     });
     settingsGrid.appendChild(div);
   });
+  // Add Reset Button at the end
+  const resetDiv = document.createElement('div');
+  resetDiv.className = 'settings-icon color-reset';
+  resetDiv.title = 'Reset all accessibility changes';
+  resetDiv.innerHTML = `<span>🔄</span><span class="settings-label">Reset</span>`;
+  resetDiv.addEventListener('click', async () => {
+    // Call clearAll on the current tab
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tabs[0]) {
+      await chrome.tabs.sendMessage(tabs[0].id, { type: 'clearAll' });
+    }
+    // Reset settings in storage to true defaults
+    const defaultSettings = {
+      highlightLinks: false,
+      dyslexiaFriendly: false,
+      websiteScale: 100,
+      hideImages: false,
+      cursorSize: 100,
+      muteSound: false,
+      highlightOnHover: false,
+      enlargeButtons: false,
+      adjustContrast: 100,
+      enabled: true
+    };
+    await chrome.storage.sync.set({ browseEasySettings: defaultSettings });
+    // Immediately apply the default settings to the current page
+    await saveAndApplySettings(defaultSettings);
+    // Re-render grid with default settings
+    renderSettingsGrid(defaultSettings);
+  });
+  settingsGrid.appendChild(resetDiv);
 }
 
 // Load settings and render grid on startup
@@ -660,10 +666,8 @@ window.addEventListener('DOMContentLoaded', async () => {
       hideImages: false,
       cursorSize: 100,
       muteSound: false,
-      textSpacing: 100,
       highlightOnHover: false,
       enlargeButtons: false,
-      addTooltips: false,
       adjustContrast: 100,
       enabled: true
     };
@@ -684,10 +688,8 @@ window.addEventListener('DOMContentLoaded', async () => {
       hideImages: false,
       cursorSize: 100,
       muteSound: false,
-      textSpacing: 100,
       highlightOnHover: false,
       enlargeButtons: false,
-      addTooltips: false,
       adjustContrast: 100,
       enabled: true
     };

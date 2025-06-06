@@ -89,22 +89,6 @@ const ACCESSIBILITY_TOOLS = [
     }
   },
   {
-    "name": "adjustTextSpacing",
-    "description": "Adjust text spacing, line height, and letter spacing",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "spacing": {
-          "type": "number",
-          "description": "Text spacing percentage (50-300, where 100 is normal spacing)",
-          "minimum": 50,
-          "maximum": 300
-        }
-      },
-      "required": ["spacing"]
-    }
-  },
-  {
     "name": "highlightOnHover",
     "description": "Highlight elements when hovering over them",
     "parameters": {
@@ -127,20 +111,6 @@ const ACCESSIBILITY_TOOLS = [
         "enabled": {
           "type": "boolean",
           "description": "Whether to enlarge buttons or use normal size"
-        }
-      },
-      "required": ["enabled"]
-    }
-  },
-  {
-    "name": "addTooltips",
-    "description": "Add helpful tooltips to images, buttons, and links",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "description": "Whether to add or remove tooltips"
         }
       },
       "required": ["enabled"]
