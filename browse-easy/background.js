@@ -1,12 +1,79 @@
-// Optional: ensure clicking the action opens the side panel
-chrome.runtime.onInstalled.addListener(() => {
+// Inject content scripts into all existing tabs on startup
+chrome.runtime.onStartup.addListener(injectIntoExistingTabs);
+chrome.runtime.onInstalled.addListener((details) => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
     .catch(console.error);
+  
+  // Inject into existing tabs when extension is installed/enabled
+  if (details.reason === 'install' || details.reason === 'enable') {
+    injectIntoExistingTabs();
+  }
 });
 
-// Listen for alt text generation requests from content script
+async function injectIntoExistingTabs() {
+  console.log('Injecting content scripts into existing tabs...');
+  try {
+    const tabs = await chrome.tabs.query({});
+    console.log(`Found ${tabs.length} tabs to potentially inject into`);
+    
+    for (const tab of tabs) {
+      // Skip chrome:// pages and other restricted URLs
+      if (tab.url.startsWith('chrome://') || 
+          tab.url.startsWith('chrome-extension://') || 
+          tab.url.startsWith('edge://') || 
+          tab.url.startsWith('about:') ||
+          tab.url.startsWith('moz-extension://')) {
+        continue;
+      }
+      
+      try {
+        console.log(`Injecting into tab: ${tab.url}`);
+        
+        // Inject the content scripts in the same order as manifest.json
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ['accessibility.js']
+        });
+        
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ['settings.js']
+        });
+        
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ['content.js']
+        });
+        
+        console.log(`Successfully injected into tab: ${tab.url}`);
+      } catch (error) {
+        // This will fail for pages that don't allow script injection
+        // (like chrome:// pages or some restricted sites) - that's expected
+        console.log(`Could not inject into ${tab.url}: ${error.message}`);
+      }
+    }
+    console.log('Finished injecting into existing tabs');
+  } catch (error) {
+    console.error('Failed to inject into existing tabs:', error);
+  }
+}
+
+// Listen for messages from content scripts and panel
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'generateAltText' && message.imgBase64) {
+  if (message.type === 'spotlightQuery' && message.query) {
+    // Forward spotlight queries from content script to panel
+    console.log('Forwarding spotlight query to panel:', message.query);
+    chrome.runtime.sendMessage({ 
+      type: 'processSpotlightQuery', 
+      query: message.query 
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.log('Could not forward to panel:', chrome.runtime.lastError.message);
+      }
+    });
+    sendResponse({ success: true });
+    return false;
+  } else if (message.type === 'generateAltText' && message.imgBase64) {
     // Call Gemini API to generate alt text from base64 image
     (async () => {
       try {
@@ -42,5 +109,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
     })();
     return true; // async
+  }
+});
+
+// Listen for the open-spotlight command and show spotlight overlay on current tab
+chrome.commands.onCommand.addListener(async (command) => {
+  console.log('command', command);
+  if (command === 'open-spotlight') {
+    console.log('open-spotlight attempted');
+    try {
+      // Send message to content script to show spotlight overlay
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab) {
+        chrome.tabs.sendMessage(tab.id, { type: 'openSpotlight' }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.log('Failed to send to content script:', chrome.runtime.lastError.message);
+            // Show notification that BrowseEasy needs to be enabled
+            chrome.action.setBadgeText({ text: '!' });
+            chrome.action.setBadgeBackgroundColor({ color: '#FF0000' });
+            chrome.action.setTitle({ title: 'BrowseEasy spotlight not available on this page' });
+            
+            // Clear the badge after 3 seconds
+            setTimeout(() => {
+              chrome.action.setBadgeText({ text: '' });
+              chrome.action.setTitle({ title: 'Open BrowseEasy' });
+            }, 3000);
+          } else {
+            console.log('Spotlight overlay shown successfully');
+          }
+        });
+      }
+    } catch (e) {
+      console.error('Failed to handle spotlight command:', e);
+    }
   }
 });

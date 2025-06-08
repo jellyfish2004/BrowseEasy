@@ -106,37 +106,158 @@
     }
   }
 
+  // Spotlight functionality
+  let spotlightOverlay = null;
+  let spotlightInput = null;
+
+  function createSpotlightOverlay() {
+    if (spotlightOverlay) return; // Already created
+
+    // Create overlay
+    spotlightOverlay = document.createElement('div');
+    spotlightOverlay.id = 'browseeasy-spotlight-overlay';
+    spotlightOverlay.style.cssText = `
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      background: rgba(32, 33, 36, 0.7) !important;
+      z-index: 2147483647 !important;
+      display: none !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    `;
+
+    // Create input
+    spotlightInput = document.createElement('input');
+    spotlightInput.id = 'browseeasy-spotlight-input';
+    spotlightInput.type = 'text';
+    spotlightInput.placeholder = 'Ask BrowseEasy...';
+    spotlightInput.autocomplete = 'off';
+    spotlightInput.style.cssText = `
+      width: 500px !important;
+      max-width: 80vw !important;
+      padding: 20px 28px !important;
+      font-size: 18px !important;
+      border-radius: 12px !important;
+      border: 2px solid #1a73e8 !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
+      outline: none !important;
+      background: white !important;
+      color: #202124 !important;
+      font-family: inherit !important;
+    `;
+
+    spotlightInput.addEventListener('focus', () => {
+      spotlightInput.style.borderColor = '#1a73e8';
+      spotlightInput.style.boxShadow = '0 8px 36px rgba(26,115,232,0.25)';
+    });
+
+    spotlightInput.addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter' && spotlightInput.value.trim()) {
+        const query = spotlightInput.value.trim();
+        log('Spotlight query:', query);
+        
+        // Send message to panel to handle the query
+        try {
+          await chrome.runtime.sendMessage({
+            type: 'spotlightQuery',
+            query: query
+          });
+          hideSpotlight();
+        } catch (err) {
+          error('Failed to send spotlight query:', err);
+        }
+      } else if (e.key === 'Escape') {
+        hideSpotlight();
+      }
+    });
+
+    // Hide on overlay click
+    spotlightOverlay.addEventListener('click', (e) => {
+      if (e.target === spotlightOverlay) {
+        hideSpotlight();
+      }
+    });
+
+    spotlightOverlay.appendChild(spotlightInput);
+    document.body.appendChild(spotlightOverlay);
+    
+    log('Spotlight overlay created');
+  }
+
+  function showSpotlight() {
+    createSpotlightOverlay();
+    if (spotlightOverlay && spotlightInput) {
+      spotlightOverlay.style.display = 'flex';
+      spotlightInput.value = '';
+      // Force focus with a small delay to ensure it works
+      setTimeout(() => {
+        spotlightInput.focus();
+        spotlightInput.select();
+      }, 50);
+      log('Spotlight shown');
+    }
+  }
+
+  function hideSpotlight() {
+    if (spotlightOverlay) {
+      spotlightOverlay.style.display = 'none';
+      spotlightInput.value = '';
+      log('Spotlight hidden');
+    }
+  }
+
   // Listen for messages from the panel/background script
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     log('Received message:', message.type, 'from:', sender.id || 'unknown');
-    
-    if (!accessibilityManager || !settingsManager) {
-      const errorMsg = 'Accessibility manager not initialized';
-      error(errorMsg);
-      sendResponse({ error: errorMsg });
-      return false;
-    }
 
     try {
       switch (message.type) {
+        case 'openSpotlight':
+          log('Opening spotlight overlay');
+          showSpotlight();
+          sendResponse({ success: true });
+          break;
+
+        case 'hideSpotlight':
+          log('Hiding spotlight overlay');
+          hideSpotlight();
+          sendResponse({ success: true });
+          break;
+
         case 'ping':
           log('Ping received');
           sendResponse({ success: true, ready: true });
           break;
 
         case 'applySettings':
+          if (!accessibilityManager) {
+            sendResponse({ error: 'Accessibility manager not initialized' });
+            break;
+          }
           log('Applying settings:', message.settings);
           accessibilityManager.applySettings(message.settings);
           sendResponse({ success: true });
           break;
 
         case 'executeFunction':
+          if (!accessibilityManager) {
+            sendResponse({ error: 'Accessibility manager not initialized' });
+            break;
+          }
           log('Executing function:', message.functionName, 'with params:', message.parameters);
           accessibilityManager.executeFunction(message.functionName, message.parameters);
           sendResponse({ success: true });
           break;
 
         case 'updateSetting':
+          if (!settingsManager) {
+            sendResponse({ error: 'Settings manager not initialized' });
+            break;
+          }
           log('Updating single setting:', message.key, '=', message.value);
           settingsManager.saveSettings({ [message.key]: message.value }).then(() => {
             sendResponse({ success: true });
@@ -147,6 +268,10 @@
           return true; // Will respond asynchronously
 
         case 'updateSettings':
+          if (!settingsManager || !accessibilityManager) {
+            sendResponse({ error: 'Managers not initialized' });
+            break;
+          }
           log('Updating multiple settings:', message.settings);
           settingsManager.saveSettings(message.settings).then(() => {
             // Apply the updated settings to the accessibility manager
@@ -160,6 +285,10 @@
           return true; // Will respond asynchronously
 
         case 'getSettings':
+          if (!settingsManager) {
+            sendResponse({ error: 'Settings manager not initialized' });
+            break;
+          }
           try {
             const settings = settingsManager.getAllSettings();
             log('Returning settings:', settings);
@@ -182,6 +311,10 @@
           break;
 
         case 'clearAll':
+          if (!accessibilityManager) {
+            sendResponse({ error: 'Accessibility manager not initialized' });
+            break;
+          }
           log('Clearing all accessibility settings');
           accessibilityManager.clearAll();
           sendResponse({ success: true });

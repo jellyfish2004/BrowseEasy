@@ -798,3 +798,37 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     }
   }
 });
+
+// No longer needed - spotlight is now handled by content script
+
+// Listen for messages from background script
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'processSpotlightQuery') {
+    // Handle spotlight query from content script via background
+    const userMsg = message.query;
+    append('user', userMsg);
+    chatHistory.push({ role: "user", parts: [{ text: userMsg }] });
+    if (chatHistory.length > MAX_HISTORY_MESSAGES) {
+      chatHistory.splice(0, chatHistory.length - MAX_HISTORY_MESSAGES);
+    }
+
+    inputEl.disabled = true;
+    
+    (async () => {
+      try {
+        const { botResponseText, botResponseForHistory } = await sendToGemini(userMsg);
+        append('bot', botResponseText);
+        chatHistory.push(botResponseForHistory);
+        if (chatHistory.length > MAX_HISTORY_MESSAGES) {
+          chatHistory.splice(0, chatHistory.length - MAX_HISTORY_MESSAGES);
+        }
+      } catch (err) {
+        append('error', err.toString());
+      } finally {
+        inputEl.disabled = false;
+      }
+    })();
+    
+    sendResponse({ success: true });
+  }
+});
