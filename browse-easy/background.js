@@ -1,3 +1,6 @@
+// Import config
+importScripts('config.js');
+
 // Inject content scripts into all existing tabs on startup
 chrome.runtime.onStartup.addListener(injectIntoExistingTabs);
 chrome.runtime.onInstalled.addListener((details) => {
@@ -77,35 +80,68 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Call Gemini API to generate alt text from base64 image
     (async () => {
       try {
-        const apiKey = (typeof window !== 'undefined' && window.config && window.config.GEMINI_API_KEY)
-          ? window.config.GEMINI_API_KEY
-          : (typeof config !== 'undefined' ? config.GEMINI_API_KEY : null);
-        if (!apiKey) throw new Error('Gemini API key not found');
-        const prompt = `You are an expert at writing accessible alt text for images on web pages.\nWrite a concise, descriptive alt text (max 1 sentence, 10-20 words) for a visually impaired user.\nDescribe the main subject, action, and context if possible.\nDo not use generic phrases like 'image', 'picture', or 'photo'.\nReturn only the alt text, nothing else.`;
+        console.log(`[BrowseEasy Background] Generating alt text for image: ${message.originalSrc}`);
+        
+        if (!config || !config.GEMINI_API_KEY) {
+          throw new Error('Gemini API key not found');
+        }
+        
+        const apiKey = config.GEMINI_API_KEY;
+        
+        // Use the provided MIME type or default to image/png
+        const mimeType = message.mimeType || 'image/png';
+        
+        const prompt = `You are an expert at writing accessible alt text for images on web pages.
+Write a concise, descriptive alt text (max 1 sentence, 10-20 words) for a visually impaired user.
+Describe the main subject, action, and context if possible.
+Do not use generic phrases like 'image', 'picture', or 'photo'.
+Be specific about what you see - people, objects, actions, text content, etc.
+Return only the alt text, nothing else.`;
+
         const requestBody = {
           contents: [
             {
               role: 'user',
               parts: [
                 { text: prompt },
-                { inline_data: { mime_type: 'image/png', data: message.imgBase64 } }
+                { 
+                  inline_data: { 
+                    mime_type: mimeType, 
+                    data: message.imgBase64 
+                  } 
+                }
               ]
             }
           ]
         };
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${apiKey}`, {
+        
+        console.log(`[BrowseEasy Background] Calling Gemini API with MIME type: ${mimeType}`);
+        
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody)
         });
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(`Gemini API error: ${res.status} - ${errorText}`);
+        }
+        
         const data = await res.json();
         let altText = '';
+        
         if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-          altText = data.candidates[0].content.parts[0].text;
+          altText = data.candidates[0].content.parts[0].text.trim();
+          console.log(`[BrowseEasy Background] Generated alt text: "${altText}"`);
+        } else {
+          console.warn('[BrowseEasy Background] No alt text in API response:', data);
         }
+        
         sendResponse({ altText });
       } catch (e) {
-        sendResponse({ altText: '' });
+        console.error('[BrowseEasy Background] Alt text generation failed:', e);
+        sendResponse({ altText: '', error: e.message });
       }
     })();
     return true; // async

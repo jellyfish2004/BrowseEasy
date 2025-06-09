@@ -277,22 +277,104 @@ class AccessibilityManager {
     }
   }
 
-  // Helper to convert image to base64
-  getImageBase64(img) {
-    return new Promise((resolve, reject) => {
-      const imgEl = new window.Image();
-      imgEl.crossOrigin = 'Anonymous';
-      imgEl.onload = function() {
-        const canvas = document.createElement('canvas');
-        canvas.width = imgEl.width;
-        canvas.height = imgEl.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(imgEl, 0, 0);
-        resolve(canvas.toDataURL('image/png').split(',')[1]); // base64 part only
-      };
-      imgEl.onerror = reject;
-      imgEl.src = img.src;
-    });
+  // Helper to convert image to base64 with proper MIME type detection and resizing
+  async getImageBase64(img) {
+    try {
+      // First try to fetch the image to get proper MIME type and avoid CORS issues
+      const response = await fetch(img.src);
+      if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
+      
+      const contentType = response.headers.get('content-type') || 'image/png';
+      const arrayBuffer = await response.arrayBuffer();
+      
+      // Convert to blob and create object URL
+      const blob = new Blob([arrayBuffer], { type: contentType });
+      const imageUrl = URL.createObjectURL(blob);
+      
+      return new Promise((resolve, reject) => {
+        const imgEl = new Image();
+        imgEl.onload = function() {
+          try {
+            const canvas = document.createElement('canvas');
+            
+            // Resize image to reduce token costs (max 512px width/height)
+            const maxSize = 512;
+            let { width, height } = imgEl;
+            
+            if (width > maxSize || height > maxSize) {
+              if (width > height) {
+                height = (height * maxSize) / width;
+                width = maxSize;
+              } else {
+                width = (width * maxSize) / height;
+                height = maxSize;
+              }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(imgEl, 0, 0, width, height);
+            
+            // Convert to base64 with proper MIME type
+            const dataURL = canvas.toDataURL(contentType, 0.8); // 0.8 quality for compression
+            const base64 = dataURL.split(',')[1];
+            
+            URL.revokeObjectURL(imageUrl);
+            resolve({ base64, mimeType: contentType });
+          } catch (canvasError) {
+            URL.revokeObjectURL(imageUrl);
+            reject(canvasError);
+          }
+        };
+        imgEl.onerror = () => {
+          URL.revokeObjectURL(imageUrl);
+          reject(new Error('Failed to load image'));
+        };
+        imgEl.src = imageUrl;
+      });
+    } catch (fetchError) {
+      // Fallback to direct canvas approach for same-origin images
+      return new Promise((resolve, reject) => {
+        const imgEl = new Image();
+        imgEl.crossOrigin = 'Anonymous';
+        imgEl.onload = function() {
+          try {
+            const canvas = document.createElement('canvas');
+            
+            // Resize image to reduce token costs
+            const maxSize = 512;
+            let { width, height } = imgEl;
+            
+            if (width > maxSize || height > maxSize) {
+              if (width > height) {
+                height = (height * maxSize) / width;
+                width = maxSize;
+              } else {
+                width = (width * maxSize) / height;
+                height = maxSize;
+              }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(imgEl, 0, 0, width, height);
+            
+            // Default to PNG if we can't determine MIME type
+            const dataURL = canvas.toDataURL('image/png', 0.8);
+            const base64 = dataURL.split(',')[1];
+            
+            resolve({ base64, mimeType: 'image/png' });
+          } catch (canvasError) {
+            reject(canvasError);
+          }
+        };
+        imgEl.onerror = () => reject(new Error('Failed to load image with CORS'));
+        imgEl.src = img.src;
+      });
+    }
   }
 
   // Generate alt text for images without alt, and return results (skipping tainted images)
@@ -301,28 +383,44 @@ class AccessibilityManager {
     const missingAltImages = images.filter(img => !img.hasAttribute('alt') || img.alt.trim() === '');
     const results = [];
     const skipped = [];
+    
+    console.log(`[BrowseEasy] Found ${missingAltImages.length} images missing alt text`);
+    
     for (const img of missingAltImages) {
       try {
-        const base64 = await this.getImageBase64(img);
+        console.log(`[BrowseEasy] Processing image: ${img.src}`);
+        const imageData = await this.getImageBase64(img);
+        
         const altText = await new Promise((resolve, reject) => {
           chrome.runtime.sendMessage({
             type: 'generateAltText',
-            imgBase64: base64
+            imgBase64: imageData.base64,
+            mimeType: imageData.mimeType,
+            originalSrc: img.src
           }, (response) => {
             if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
             if (response && response.altText) resolve(response.altText);
             else reject(new Error('No alt text returned'));
           });
         });
-        if (altText) img.alt = altText;
-        results.push({ src: img.src, alt: altText });
+        
+        if (altText && altText.trim()) {
+          img.alt = altText.trim();
+          results.push({ src: img.src, alt: altText.trim() });
+          console.log(`[BrowseEasy] Generated alt text for ${img.src}: "${altText}"`);
+        } else {
+          console.warn(`[BrowseEasy] Empty alt text returned for ${img.src}`);
+          skipped.push(img.src);
+        }
       } catch (e) {
-        // Tainted image or other error
+        console.warn(`[BrowseEasy] Failed to process image ${img.src}:`, e.message);
         skipped.push(img.src);
       }
     }
+    
     // Send results and skipped to panel for chat display
     chrome.runtime.sendMessage({ type: 'altTextResults', results, skipped });
+    console.log(`[BrowseEasy] Alt text generation complete: ${results.length} processed, ${skipped.length} skipped`);
     return { results, skipped };
   }
 
