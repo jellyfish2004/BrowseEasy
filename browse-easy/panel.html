@@ -120,26 +120,114 @@
     #app-controls {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     #theme-buttons {
       display: flex;
+      flex-direction: row;
       gap: 4px;
       margin-right: 8px;
     }
 
-    .theme-btn {
-      background: none;
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      background: var(--settings-icon-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 2px;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      width: 44px;
+      height: 20px;
+      position: relative;
+    }
+
+    .theme-toggle:hover {
+      border-color: var(--primary-color);
+    }
+
+    .theme-toggle .toggle-handle {
+      width: 16px;
+      height: 16px;
+      background: var(--text-secondary);
+      border-radius: 50%;
+      transition: all 0.2s ease-in-out;
+      position: absolute;
+      left: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+    }
+
+    .theme-toggle.active .toggle-handle {
+      left: 24px;
+      background: var(--primary-color);
+      color: #ffffff;
+    }
+
+    .theme-toggle .toggle-handle::before {
+      content: var(--toggle-icon, '☀️');
+      font-size: 10px;
+    }
+
+    .theme-toggle.active .toggle-handle::before {
+      content: var(--toggle-icon-active, '🌙');
+    }
+
+    #dark-toggle .toggle-handle {
+      --toggle-icon: '☀️';
+      --toggle-icon-active: '🌙';
+    }
+
+    #contrast-toggle .toggle-handle {
+      --toggle-icon: '⚪';
+      --toggle-icon-active: '⚫';
+    }
+
+    /* Uniform button styling for all action buttons */
+    .action-btn {
+      background: var(--settings-icon-bg);
       border: 1px solid var(--border-color);
       color: var(--text-secondary);
-      font-size: 0.75em;
+      font-size: 16px;
       cursor: pointer;
-      padding: 4px 8px;
-      border-radius: 12px;
+      padding: 8px;
+      border-radius: 8px;
       transition: all 0.2s ease-in-out;
-      min-width: 24px;
-      height: 24px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .action-btn:hover {
+      background-color: var(--hover-bg);
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+
+    .action-btn.active {
+      background-color: var(--primary-color);
+      color: #ffffff;
+      border-color: var(--primary-color);
+    }
+
+    /* Keep theme-btn styles for share-tab-btn compatibility */
+    .theme-btn {
+      background: var(--settings-icon-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      transition: all 0.2s ease-in-out;
+      width: 36px;
+      height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -148,27 +236,13 @@
     .theme-btn:hover {
       background-color: var(--hover-bg);
       border-color: var(--primary-color);
+      color: var(--primary-color);
     }
 
     .theme-btn.active {
       background-color: var(--primary-color);
       color: #ffffff;
       border-color: var(--primary-color);
-    }
-
-    #audioModeButton {
-      background: none;
-      border: none;
-      color: var(--text-secondary);
-      font-size: 1.5em;
-      cursor: pointer;
-      padding: 8px;
-      border-radius: 50%;
-      transition: background-color 0.2s ease-in-out;
-    }
-    #audioModeButton:hover {
-      background-color: var(--hover-bg);
-      color: var(--primary-color);
     }
 
     #tab-switcher {
@@ -477,14 +551,16 @@
     <h1>BrowseEasy</h1>
     <div id="app-controls">
       <div id="theme-buttons">
-        <button class="theme-btn active" data-theme="light" title="Light Theme">☀️</button>
-        <button class="theme-btn" data-theme="dark" title="Dark Theme">🌙</button>
-        <button class="theme-btn" data-theme="high-contrast" title="High Contrast">⚫</button>
-        <button class="theme-btn" data-theme="dark-high-contrast" title="Dark High Contrast">🔲</button>
+        <div id="dark-toggle" class="theme-toggle" title="Toggle Dark/Light Mode">
+          <div class="toggle-handle"></div>
+        </div>
+        <div id="contrast-toggle" class="theme-toggle" title="Toggle High/Normal Contrast">
+          <div class="toggle-handle"></div>
+        </div>
       </div>
       <button id="share-tab-btn" class="theme-btn" title="Share current tab content with AI">📄</button>
-      <button id="audioModeButton" title="Switch to Audio Input">🎙️</button>
-      <button id="readPageButton" title="Read this page aloud">🔊</button>
+      <button id="audioModeButton" class="action-btn" title="Switch to Audio Input">🎙️</button>
+      <button id="readPageButton" class="action-btn" title="Read this page aloud">🔊</button>
     </div>
   </div>
   <div id="tab-switcher">

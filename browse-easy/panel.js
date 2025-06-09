@@ -15,8 +15,11 @@ let chatHistory = []; // Initialize chat history
 const MAX_HISTORY_MESSAGES = 10; // Max number of messages (user + bot) to keep, excluding system prompt & current query
 
 // Theme switching functionality
-const themeButtons = document.querySelectorAll('.theme-btn');
+const darkToggle = document.getElementById('dark-toggle');
+const contrastToggle = document.getElementById('contrast-toggle');
 let currentTheme = 'light'; // Default theme
+let isDark = false;
+let isHighContrast = false;
 
 // Content sharing functionality
 let contentSharingEnabled = false;
@@ -39,13 +42,27 @@ function setTheme(theme) {
   currentTheme = theme;
   document.body.setAttribute('data-theme', theme);
   
-  // Update active button
-  themeButtons.forEach(btn => {
-    btn.classList.remove('active');
-    if (btn.getAttribute('data-theme') === theme) {
-      btn.classList.add('active');
-    }
-  });
+  // Update toggle states based on theme
+  switch(theme) {
+    case 'light':
+      isDark = false;
+      isHighContrast = false;
+      break;
+    case 'dark':
+      isDark = true;
+      isHighContrast = false;
+      break;
+    case 'high-contrast':
+      isDark = false;
+      isHighContrast = true;
+      break;
+    case 'dark-high-contrast':
+      isDark = true;
+      isHighContrast = true;
+      break;
+  }
+  
+  updateToggleUI();
   
   // Save theme preference
   chrome.storage.sync.set({ browseEasyTheme: theme }).catch(error => {
@@ -53,16 +70,53 @@ function setTheme(theme) {
   });
 }
 
-// Add event listeners for theme buttons
-themeButtons.forEach(button => {
-  // Skip the share tab button - it's not a theme button
-  if (button.id === 'share-tab-btn') return;
+// Update toggle UI based on current state
+function updateToggleUI() {
+  if (isDark) {
+    darkToggle.classList.add('active');
+  } else {
+    darkToggle.classList.remove('active');
+  }
   
-  button.addEventListener('click', () => {
-    const theme = button.getAttribute('data-theme');
-    setTheme(theme);
+  if (isHighContrast) {
+    contrastToggle.classList.add('active');
+  } else {
+    contrastToggle.classList.remove('active');
+  }
+}
+
+// Update theme based on toggle states
+function updateThemeFromToggles() {
+  let newTheme;
+  if (isDark && isHighContrast) {
+    newTheme = 'dark-high-contrast';
+  } else if (isDark && !isHighContrast) {
+    newTheme = 'dark';
+  } else if (!isDark && isHighContrast) {
+    newTheme = 'high-contrast';
+  } else {
+    newTheme = 'light';
+  }
+  
+  if (newTheme !== currentTheme) {
+    setTheme(newTheme);
+  }
+}
+
+// Add event listeners for theme toggles
+if (darkToggle) {
+  darkToggle.addEventListener('click', () => {
+    isDark = !isDark;
+    updateThemeFromToggles();
   });
-});
+}
+
+if (contrastToggle) {
+  contrastToggle.addEventListener('click', () => {
+    isHighContrast = !isHighContrast;
+    updateThemeFromToggles();
+  });
+}
 
 // Add event listener for share tab button
 shareTabBtn.addEventListener('click', () => {
