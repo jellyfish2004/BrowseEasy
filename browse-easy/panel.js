@@ -9,6 +9,7 @@ const settingsGrid = document.getElementById('settings-grid');
 const shareTabBtn = document.getElementById('share-tab-btn');
 const shareContentToggle = document.getElementById('share-content-toggle');
 const contentStatus = document.getElementById('content-status');
+const readPageButton = document.getElementById('readPageButton');
 
 let chatHistory = []; // Initialize chat history
 const MAX_HISTORY_MESSAGES = 10; // Max number of messages (user + bot) to keep, excluding system prompt & current query
@@ -832,3 +833,113 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ success: true });
   }
 });
+
+if (readPageButton) {
+  readPageButton.addEventListener('click', async () => {
+    let selectedText = '';
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const [{ result }] = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: () => {
+          let selected = '';
+          if (window.getSelection) {
+            selected = window.getSelection().toString();
+          } else if (document.selection && document.selection.createRange) {
+            selected = document.selection.createRange().text;
+          }
+          // Clean up selected text
+          if (selected) {
+            selected = selected
+              .replace(/\[[^\]]*\]/g, '')
+              .replace(/\s+/g, ' ')
+              .replace(/\b(edit|Edit)\b/g, '')
+              .replace(/https?:\/\/[^\s]+/g, '')
+              .replace(/\S+@\S+\.\S+/g, '')
+              .replace(/\s+([,.!?;:])/g, '$1')
+              .trim();
+          }
+          return selected;
+        }
+      });
+      selectedText = result;
+    } catch (e) {
+      append('error', 'Unable to extract selected text.');
+      return;
+    }
+    if (!selectedText || selectedText.trim().length === 0) {
+      append('error', 'No text is selected. Please highlight some text to read aloud.');
+      return;
+    }
+    // Chunk the selected text for TTS API
+    const MAX_CHUNK_LEN = 1800;
+    const chunks = [];
+    for (let i = 0; i < selectedText.length; i += MAX_CHUNK_LEN) {
+      let chunk = selectedText.substring(i, i + MAX_CHUNK_LEN);
+      if (i + MAX_CHUNK_LEN < selectedText.length) {
+        const lastSpace = chunk.lastIndexOf(' ');
+        if (lastSpace > MAX_CHUNK_LEN * 0.8) {
+          chunk = chunk.substring(0, lastSpace);
+        }
+      }
+      if (chunk.trim()) {
+        chunks.push(chunk.trim());
+      }
+    }
+    append('bot', `🔊 Reading selected text aloud in ${chunks.length} chunk(s)... (${selectedText.length} characters total)`);
+    try {
+      const apiKey = window.config && window.config.SARVAM_API_KEY;
+      if (!apiKey) throw new Error('Sarvam API key not found');
+      for (let idx = 0; idx < chunks.length; idx++) {
+        const chunk = chunks[idx];
+        append('bot', `🔊 Reading chunk ${idx + 1} of ${chunks.length}... (${chunk.length} chars)`);
+        const response = await fetch('https://api.sarvam.ai/text-to-speech', {
+          method: 'POST',
+          headers: {
+            'api-subscription-key': apiKey,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            text: chunk,
+            target_language_code: 'en-IN',
+            model: 'bulbul:v2',
+            speaker: 'anushka',
+            pitch: 0.0,
+            pace: 1.0,
+            loudness: 1.0,
+            enable_preprocessing: true
+          })
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`TTS API error: ${response.statusText} - ${errorText}`);
+        }
+        const data = await response.json();
+        if (!data.audios || !data.audios[0]) {
+          throw new Error('No audio returned from TTS API.');
+        }
+        const audioBase64 = data.audios[0];
+        const audioBlob = new Blob([
+          Uint8Array.from(atob(audioBase64), c => c.charCodeAt(0))
+        ], { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        await new Promise((resolve, reject) => {
+          const audio = new Audio(audioUrl);
+          audio.onended = () => {
+            URL.revokeObjectURL(audioUrl);
+            resolve();
+          };
+          audio.onerror = (e) => {
+            URL.revokeObjectURL(audioUrl);
+            reject(e);
+          };
+          audio.play().catch(reject);
+        });
+      }
+      append('bot', `🔊 Finished reading the selected text.`);
+    } catch (err) {
+      append('error', 'Audio generation failed: ' + err.message);
+      console.error('TTS Error:', err);
+    }
+  });
+}
