@@ -6,49 +6,78 @@
     <title>BrowseEasy Accessibility Features Test</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
             line-height: 1.6;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
         }
+        
+        h1 {
+            color: #569cd6;
+            text-align: center;
+            border-bottom: 2px solid #3c3c3c;
+            padding-bottom: 10px;
+        }
+        
         .test-section {
-            background: #f8f9fa;
-            border: 1px solid #ddd;
+            background: #252526;
+            border: 1px solid #3c3c3c;
             border-radius: 8px;
             margin: 20px 0;
             padding: 20px;
         }
+        
         .test-controls {
-            background: #e3f2fd;
+            background: #2d2d30;
+            border: 1px solid #404040;
             padding: 15px;
             border-radius: 6px;
             margin: 15px 0;
         }
+        
+        .test-controls h3 {
+            color: #ce9178;
+            margin-top: 0;
+        }
+        
         .test-button {
-            background: #1976d2;
-            color: white;
-            border: none;
+            background: #0e639c;
+            color: #ffffff;
+            border: 1px solid #1177bb;
             padding: 10px 20px;
             margin: 5px;
             border-radius: 4px;
             cursor: pointer;
+            font-family: inherit;
+            transition: background-color 0.2s;
         }
+        
         .test-button:hover {
-            background: #1565c0;
+            background: #1177bb;
         }
+        
         .test-elements {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
             margin: 20px 0;
         }
+        
         .test-card {
-            background: white;
-            border: 1px solid #ddd;
+            background: #252526;
+            border: 1px solid #3c3c3c;
             border-radius: 6px;
             padding: 15px;
         }
+        
+        .test-card h3 {
+            color: #4ec9b0;
+            margin-top: 0;
+        }
+        
         .status-indicator {
             display: inline-block;
             width: 12px;
@@ -56,37 +85,85 @@
             border-radius: 50%;
             margin-right: 8px;
         }
+        
         .status-pass { background: #4caf50; }
         .status-fail { background: #f44336; }
         .status-pending { background: #ff9800; }
+        
         .test-image {
             width: 100px;
             height: 60px;
-            background: linear-gradient(45deg, #ccc, #999);
-            border: 1px solid #aaa;
+            border: 1px solid #555;
             display: block;
             margin: 10px 0;
+            border-radius: 4px;
         }
+        
         .test-video {
-            width: 150px;
-            height: 100px;
-            background: #333;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #666;
+            width: 200px;
+            max-height: 150px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            margin: 10px 0;
         }
+        
+        audio {
+            width: 100%;
+            margin: 10px 0;
+        }
+        
         #test-results {
-            background: #f5f5f5;
-            border: 1px solid #ccc;
+            background: #1e1e1e;
+            border: 1px solid #404040;
             border-radius: 6px;
             padding: 15px;
             margin: 20px 0;
-            font-family: monospace;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
             white-space: pre-wrap;
             max-height: 300px;
             overflow-y: auto;
+            color: #d4d4d4;
+        }
+        
+        a {
+            color: #569cd6;
+            text-decoration: underline;
+        }
+        
+        a:hover {
+            color: #9cdcfe;
+        }
+        
+        input, select {
+            background: #3c3c3c;
+            border: 1px solid #555;
+            color: #d4d4d4;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 5px;
+        }
+        
+        #cursor-test-area, #hover-test-area, #contrast-test-area, #caption-test-area {
+            background: #2d2d30;
+            border: 2px dashed #555;
+            color: #d4d4d4;
+        }
+        
+        #caption-test-area {
+            background: #000;
+            position: relative;
+        }
+        
+        #test-caption-overlay {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: none;
         }
     </style>
 </head>
@@ -130,15 +207,19 @@
 
         <div class="test-card">
             <h3>🖼️ Image Hiding</h3>
-            <img class="test-image" id="test-image-1" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjYwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iNjAiIGZpbGw9IiNjY2MiLz48dGV4dCB4PSI1MCIgeT0iMzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzMzMyIgdGV4dC1hbmNob3I9Im1pZGRsZSI+VGVzdCBJbWFnZTwvdGV4dD48L3N2Zz4=" alt="Test Image">
-            <div class="test-video" id="test-video-1">Test Video</div>
+            <img class="test-image" id="test-image-1" src="test_image.jpg" alt="Test Image" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div style="display:none; color: #ce9178; font-style: italic;">Image file not found: test_image.jpg</div>
+            <video class="test-video" id="test-video-1" controls muted>
+                <source src="test_video.mp4" type="video/mp4">
+                <div style="color: #ce9178; font-style: italic;">Video file not found: test_video.mp4</div>
+            </video>
             <button class="test-button" onclick="testImageHiding()">Test Image Hiding</button>
             <div id="image-test-result"></div>
         </div>
 
         <div class="test-card">
             <h3>🖱️ Cursor Size</h3>
-            <div id="cursor-test-area" style="padding: 20px; border: 2px dashed #ccc; min-height: 60px;">
+            <div id="cursor-test-area" style="padding: 20px; border: 2px dashed #555; min-height: 60px;">
                 Move your cursor over this area to test cursor size changes.
             </div>
             <button class="test-button" onclick="testCursorSize()">Test Cursor</button>
@@ -147,13 +228,13 @@
 
         <div class="test-card">
             <h3>🔇 Sound Control</h3>
-            <video id="test-video-sound" controls style="width: 100%;">
-                <source src="data:video/mp4;base64," type="video/mp4">
-                Your browser does not support the video tag.
+            <video id="test-video-sound" controls style="width: 100%; max-height: 200px;" muted>
+                <source src="test_video.mp4" type="video/mp4">
+                <div style="color: #ce9178; font-style: italic;">Video file not found: test_video.mp4</div>
             </video>
-            <audio id="test-audio-sound" controls style="width: 100%;">
-                <source src="data:audio/mpeg;base64," type="audio/mpeg">
-                Your browser does not support the audio element.
+            <audio id="test-audio-sound" controls style="width: 100%;" muted>
+                <source src="test_audio.wav" type="audio/wav">
+                <div style="color: #ce9178; font-style: italic;">Audio file not found: test_audio.wav</div>
             </audio>
             <button class="test-button" onclick="testSoundControl()">Test Sound Muting</button>
             <div id="sound-test-result"></div>
@@ -162,7 +243,7 @@
         <div class="test-card">
             <h3>✨ Hover Highlighting</h3>
             <div id="hover-test-area" style="padding: 15px;">
-                <button id="hover-test-btn">Hover Test Button</button>
+                <button id="hover-test-btn" class="test-button">Hover Test Button</button>
                 <input id="hover-test-input" type="text" placeholder="Hover test input">
                 <select id="hover-test-select">
                     <option>Hover test option</option>
@@ -184,7 +265,7 @@
 
         <div class="test-card">
             <h3>🌈 Contrast Adjustment</h3>
-            <div id="contrast-test-area" style="background: #f0f0f0; padding: 15px; color: #333;">
+            <div id="contrast-test-area" style="background: #2d2d30; padding: 15px; color: #d4d4d4;">
                 This area tests contrast adjustments. Text should become more or less contrasted.
             </div>
             <button class="test-button" onclick="testContrastAdjustment()">Test Contrast</button>
@@ -193,7 +274,8 @@
 
         <div class="test-card">
             <h3>🏷️ Alt Text Generation</h3>
-            <img id="test-image-no-alt" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjYwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iNjAiIGZpbGw9IiNmZjk4MDAiLz48dGV4dCB4PSI1MCIgeT0iMzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Tm8gQWx0PC90ZXh0Pjwvc3ZnPg==" style="display: block; margin: 10px 0;">
+            <img id="test-image-no-alt" src="test_image.jpg" style="display: block; margin: 10px 0; width: 100px; height: 60px; border: 1px solid #555; border-radius: 4px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div style="display:none; color: #ce9178; font-style: italic;">Image file not found: test_image.jpg</div>
             <button class="test-button" onclick="testAltTextGeneration()">Test Alt Text</button>
             <div id="alttext-test-result"></div>
         </div>
