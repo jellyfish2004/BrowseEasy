@@ -35,6 +35,11 @@ async function injectIntoExistingTabs() {
         // Inject the content scripts in the same order as manifest.json
         await chrome.scripting.executeScript({
           target: { tabId: tab.id },
+          files: ['config.js']
+        });
+        
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
           files: ['accessibility.js']
         });
         

@@ -476,6 +476,7 @@ settingsTab.addEventListener('click', async () => {
       highlightOnHover: false,
       enlargeButtons: false,
       adjustContrast: 100,
+      liveCaptions: false,
       enabled: true
     };
     
@@ -496,7 +497,8 @@ const TOOL_ICONS = {
   muteSound: '🔇',
   highlightOnHover: '🖍️',
   enlargeButtons: '⬆️',
-  adjustContrast: '🌗'
+  adjustContrast: '🌗',
+  liveCaptions: '💬'
 };
 
 // Friendly labels for each tool
@@ -510,6 +512,7 @@ const TOOL_LABELS = {
   highlightOnHover: 'Highlight on Hover',
   enlargeButtons: 'Enlarge Buttons',
   adjustContrast: 'Adjust Contrast',
+  liveCaptions: 'Live Captions',
   generateAltTextForImages: 'Generate Alt Text'
 };
 
@@ -578,6 +581,9 @@ async function saveSettingsFromToolExecution(toolName, parameters) {
         break;
       case 'adjustContrast':
         newSettings.adjustContrast = parameters.contrast;
+        break;
+      case 'liveCaptions':
+        newSettings.liveCaptions = parameters.enabled;
         break;
       // generateAltTextForImages doesn't need to be saved as a setting
       default:

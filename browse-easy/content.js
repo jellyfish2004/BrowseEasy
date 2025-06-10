@@ -60,6 +60,9 @@
       accessibilityManager = new AccessibilityManager();
       settingsManager = new SettingsManager();
       
+      // Make accessibility manager available globally for debugging
+      window.browseEasyManager = accessibilityManager;
+      
       log('Managers created successfully');
       
       // Load and apply saved settings

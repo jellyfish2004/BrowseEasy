@@ -140,6 +140,20 @@ const ACCESSIBILITY_TOOLS = [
       "properties": {},
       "required": []
     }
+  },
+  {
+    "name": "liveCaptions",
+    "description": "Enable live captions for audio and video content using real-time speech recognition",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether to enable or disable live captions"
+        }
+      },
+      "required": ["enabled"]
+    }
   }
 ];
 
