@@ -19,7 +19,7 @@
       "file://*/*"
     ],
     "action": {
-      "default_title": "Open BrowseEasy"
+      "default_title": "BrowseEasy"
     },
     "side_panel": {
       "default_path": "panel.html",
