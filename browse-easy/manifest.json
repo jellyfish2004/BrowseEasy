@@ -14,7 +14,8 @@
       "https://generativelanguage.googleapis.com/*",
       "https://api.sarvam.ai/*",
       "http://*/*",
-      "https://*/*"
+      "https://*/*",
+      "file://*/*"
     ],
     "action": {
       "default_title": "Open BrowseEasy"
@@ -43,7 +44,7 @@
     },
     "content_scripts": [
       {
-        "matches": ["http://*/*", "https://*/*"],
+        "matches": ["http://*/*", "https://*/*", "file://*/*"],
         "js": ["config.js", "accessibility.js", "settings.js", "content.js"],
         "run_at": "document_idle"
       }

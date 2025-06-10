@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrowseEasy Accessibility Features Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin: 20px 0;
+            padding: 20px;
+        }
+        .test-controls {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        .test-button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .test-button:hover {
+            background: #1565c0;
+        }
+        .test-elements {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .test-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-pass { background: #4caf50; }
+        .status-fail { background: #f44336; }
+        .status-pending { background: #ff9800; }
+        .test-image {
+            width: 100px;
+            height: 60px;
+            background: linear-gradient(45deg, #ccc, #999);
+            border: 1px solid #aaa;
+            display: block;
+            margin: 10px 0;
+        }
+        .test-video {
+            width: 150px;
+            height: 100px;
+            background: #333;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #666;
+        }
+        #test-results {
+            background: #f5f5f5;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 BrowseEasy Accessibility Features Test</h1>
+
+    <div class="test-controls">
+        <h3>Test Controls</h3>
+        <p><strong>Instructions:</strong> Use the BrowseEasy extension panel to test each feature, then click the test buttons below to verify functionality.</p>
+        <button class="test-button" onclick="runAllTests()">🧪 Run All Tests</button>
+        <button class="test-button" onclick="resetTests()">🔄 Reset Tests</button>
+        <button class="test-button" onclick="generateReport()">📊 Generate Report</button>
+    </div>
+
+    <div id="test-results"></div>
+
+    <div class="test-elements">
+        <div class="test-card">
+            <h3>📎 Link Highlighting Test</h3>
+            <p>Test links for highlighting functionality:</p>
+            <a href="#test1" id="test-link-1">Test Link 1</a><br>
+            <a href="#test2" id="test-link-2">Test Link 2</a><br>
+            <a href="#test3" id="test-link-3">External Link</a>
+            <button class="test-button" onclick="testLinkHighlighting()">Test Links</button>
+            <div id="link-test-result"></div>
+        </div>
+
+        <div class="test-card">
+            <h3>🔤 Dyslexia-Friendly Text</h3>
+            <p id="dyslexia-test-text">This text should become dyslexia-friendly with better fonts and spacing when the feature is enabled.</p>
+            <button class="test-button" onclick="testDyslexiaFriendly()">Test Dyslexia Font</button>
+            <div id="dyslexia-test-result"></div>
+        </div>
+
+        <div class="test-card">
+            <h3>🔍 Website Scaling</h3>
+            <p id="scale-test-element">This element tests website scaling functionality.</p>
+            <button class="test-button" onclick="testWebsiteScaling()">Test Scaling</button>
+            <div id="scale-test-result"></div>
+        </div>
+
+        <div class="test-card">
+            <h3>🖼️ Image Hiding</h3>
+            <img class="test-image" id="test-image-1" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjYwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iNjAiIGZpbGw9IiNjY2MiLz48dGV4dCB4PSI1MCIgeT0iMzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzMzMyIgdGV4dC1hbmNob3I9Im1pZGRsZSI+VGVzdCBJbWFnZTwvdGV4dD48L3N2Zz4=" alt="Test Image">
+            <div class="test-video" id="test-video-1">Test Video</div>
+            <button class="test-button" onclick="testImageHiding()">Test Image Hiding</button>
+            <div id="image-test-result"></div>
+        </div>
+
+        <div class="test-card">
+            <h3>🖱️ Cursor Size</h3>
+            <div id="cursor-test-area" style="padding: 20px; border: 2px dashed #ccc; min-height: 60px;">
+                Move your cursor over this area to test cursor size changes.
+            </div>
+            <button class="test-button" onclick="testCursorSize()">Test Cursor</button>
+            <div id="cursor-test-result"></div>
+        </div>
+
+        <div class="test-card">
+            <h3>🔇 Sound Control</h3>
+            <video id="test-video-sound" controls style="width: 100%;">
+                <source src="data:video/mp4;base64," type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <audio id="test-audio-sound" controls style="width: 100%;">
+                <source src="data:audio/mpeg;base64," type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
+            <button class="test-button" onclick="testSoundControl()">Test Sound Muting</button>
+            <div id="sound-test-result"></div>
+        </div>
+
+        <div class="test-card">
+            <h3>✨ Hover Highlighting</h3>
+            <div id="hover-test-area" style="padding: 15px;">
+                <button id="hover-test-btn">Hover Test Button</button>
+                <input id="hover-test-input" type="text" placeholder="Hover test input">
+                <select id="hover-test-select">
+                    <option>Hover test option</option>
+                </select>
+            </div>
+            <button class="test-button" onclick="testHoverHighlighting()">Test Hover</button>
+            <div id="hover-test-result"></div>
+        </div>
+
+        <div class="test-card">
+            <h3>🔘 Button Enlargement</h3>
+            <div id="button-test-area">
+                <button id="enlarge-test-btn-1" class="test-button">Test Button 1</button>
+                <button id="enlarge-test-btn-2" class="test-button">Test Button 2</button>
+            </div>
+            <button class="test-button" onclick="testButtonEnlargement()">Test Button Size</button>
+            <div id="button-test-result"></div>
+        </div>
+
+        <div class="test-card">
+            <h3>🌈 Contrast Adjustment</h3>
+            <div id="contrast-test-area" style="background: #f0f0f0; padding: 15px; color: #333;">
+                This area tests contrast adjustments. Text should become more or less contrasted.
+            </div>
+            <button class="test-button" onclick="testContrastAdjustment()">Test Contrast</button>
+            <div id="contrast-test-result"></div>
+        </div>
+
+        <div class="test-card">
+            <h3>🏷️ Alt Text Generation</h3>
+            <img id="test-image-no-alt" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjYwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iNjAiIGZpbGw9IiNmZjk4MDAiLz48dGV4dCB4PSI1MCIgeT0iMzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Tm8gQWx0PC90ZXh0Pjwvc3ZnPg==" style="display: block; margin: 10px 0;">
+            <button class="test-button" onclick="testAltTextGeneration()">Test Alt Text</button>
+            <div id="alttext-test-result"></div>
+        </div>
+
+        <div class="test-card">
+            <h3>💬 Live Captions</h3>
+            <div id="caption-test-area" style="background: #000; color: white; padding: 15px; min-height: 60px; position: relative;">
+                Play audio/video to test live captions functionality.
+                <div id="test-caption-overlay" style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 5px 10px; border-radius: 4px; display: none;">
+                    Test Caption Text
+                </div>
+            </div>
+            <button class="test-button" onclick="testLiveCaptions()">Test Live Captions</button>
+            <div id="captions-test-result"></div>
+        </div>
+    </div>
+
+    <script src="test-utils.js"></script>
+    <script>
+        // Test implementations
+        async function testLinkHighlighting() {
+            const links = document.querySelectorAll('#test-link-1, #test-link-2, #test-link-3');
+            let hasHighlight = false;
+            
+            links.forEach(link => {
+                const bg = testUtils.getComputedStyle(link, 'background-color');
+                const border = testUtils.getComputedStyle(link, 'border');
+                if (bg.includes('255, 255, 0') || border.includes('orange')) {
+                    hasHighlight = true;
+                }
+            });
+
+            const result = assert(hasHighlight, 'Links should have yellow background or orange border when highlighted');
+            document.getElementById('link-test-result').innerHTML = 
+                `<span class="status-indicator ${result ? 'status-pass' : 'status-fail'}"></span>
+                 ${result ? 'PASS' : 'FAIL'}: Link highlighting`;
+            return result;
+        }
+
+        async function testDyslexiaFriendly() {
+            const element = document.getElementById('dyslexia-test-text');
+            const fontFamily = testUtils.getComputedStyle(element, 'font-family');
+            const letterSpacing = testUtils.getComputedStyle(element, 'letter-spacing');
+            
+            const isDyslexiaFriendly = fontFamily.includes('OpenDyslexic') || letterSpacing !== 'normal';
+            const result = assert(isDyslexiaFriendly, 'Text should use dyslexia-friendly font or spacing');
+            
+            document.getElementById('dyslexia-test-result').innerHTML = 
+                `<span class="status-indicator ${result ? 'status-pass' : 'status-fail'}"></span>
+                 ${result ? 'PASS' : 'FAIL'}: Dyslexia-friendly text`;
+            return result;
+        }
+
+        async function testWebsiteScaling() {
+            const element = document.getElementById('scale-test-element');
+            const transform = testUtils.getComputedStyle(element, 'transform');
+            const zoom = testUtils.getComputedStyle(element, 'zoom');
+            
+            const isScaled = transform.includes('scale') || zoom !== '1' || zoom !== 'normal';
+            const result = assert(isScaled, 'Website should be scaled when scaling is enabled');
+            
+            document.getElementById('scale-test-result').innerHTML = 
+                `<span class="status-indicator ${result ? 'status-pass' : 'status-fail'}"></span>
+                 ${result ? 'PASS' : 'FAIL'}: Website scaling`;
+            return result;
+        }
+
+        async function testImageHiding() {
+            const image = document.getElementById('test-image-1');
+            const video = document.getElementById('test-video-1');
+            const imageHidden = testUtils.getComputedStyle(image, 'display') === 'none';
+            const videoHidden = testUtils.getComputedStyle(video, 'display') === 'none';
+            
+            const result = assert(imageHidden || videoHidden, 'Images/videos should be hidden when feature is enabled');
+            
+            document.getElementById('image-test-result').innerHTML = 
+                `<span class="status-indicator ${result ? 'status-pass' : 'status-fail'}"></span>
+                 ${result ? 'PASS' : 'FAIL'}: Image hiding`;
+            return result;
+        }
+
+        async function testCursorSize() {
+            const cursor = testUtils.getComputedStyle(document.body, 'cursor');
+            // This is harder to test programmatically, so we'll mark as pending for manual verification
+            const result = true; // Manual test required
+            
+            document.getElementById('cursor-test-result').innerHTML = 
+                `<span class="status-indicator status-pending"></span>
+                 MANUAL: Check cursor size manually`;
+            return result;
+        }
+
+        async function testSoundControl() {
+            const video = document.getElementById('test-video-sound');
+            const audio = document.getElementById('test-audio-sound');
+            const videoMuted = video.muted;
+            const audioMuted = audio.muted;
+            
+            const result = assert(videoMuted && audioMuted, 'Audio/video should be muted when sound control is enabled');
+            
+            document.getElementById('sound-test-result').innerHTML = 
+                `<span class="status-indicator ${result ? 'status-pass' : 'status-fail'}"></span>
+                 ${result ? 'PASS' : 'FAIL'}: Sound muting`;
+            return result;
+        }
+
+        async function testHoverHighlighting() {
+            // This requires manual testing as hover states are hard to programmatically verify
+            const result = true; // Manual test required
+            
+            document.getElementById('hover-test-result').innerHTML = 
+                `<span class="status-indicator status-pending"></span>
+                 MANUAL: Hover over elements to verify highlighting`;
+            return result;
+        }
+
+        async function testButtonEnlargement() {
+            const btn1 = document.getElementById('enlarge-test-btn-1');
+            const btn2 = document.getElementById('enlarge-test-btn-2');
+            const btn1Size = testUtils.getComputedStyle(btn1, 'font-size');
+            const btn2Size = testUtils.getComputedStyle(btn2, 'font-size');
+            
+            // Check if buttons are enlarged (font-size should be larger than normal)
+            const isEnlarged = parseFloat(btn1Size) > 16 || parseFloat(btn2Size) > 16;
+            const result = assert(isEnlarged, 'Buttons should be enlarged when feature is enabled');
+            
+            document.getElementById('button-test-result').innerHTML = 
+                `<span class="status-indicator ${result ? 'status-pass' : 'status-fail'}"></span>
+                 ${result ? 'PASS' : 'FAIL'}: Button enlargement`;
+            return result;
+        }
+
+        async function testContrastAdjustment() {
+            const element = document.getElementById('contrast-test-area');
+            const filter = testUtils.getComputedStyle(element, 'filter');
+            
+            const hasContrast = filter.includes('contrast');
+            const result = assert(hasContrast, 'Element should have contrast filter when adjustment is enabled');
+            
+            document.getElementById('contrast-test-result').innerHTML = 
+                `<span class="status-indicator ${result ? 'status-pass' : 'status-fail'}"></span>
+                 ${result ? 'PASS' : 'FAIL'}: Contrast adjustment`;
+            return result;
+        }
+
+        async function testAltTextGeneration() {
+            const image = document.getElementById('test-image-no-alt');
+            const hasAlt = image.alt && image.alt.trim() !== '';
+            
+            const result = assert(hasAlt, 'Image should have alt text after generation');
+            
+            document.getElementById('alttext-test-result').innerHTML = 
+                `<span class="status-indicator ${result ? 'status-pass' : 'status-fail'}"></span>
+                 ${result ? 'PASS' : 'FAIL'}: Alt text generation`;
+            return result;
+        }
+
+        async function testLiveCaptions() {
+            const overlay = document.querySelector('#browse-easy-live-captions');
+            const hasOverlay = overlay !== null;
+            
+            const result = assert(hasOverlay, 'Live captions overlay should exist when feature is enabled');
+            
+            document.getElementById('captions-test-result').innerHTML = 
+                `<span class="status-indicator ${result ? 'status-pass' : 'status-fail'}"></span>
+                 ${result ? 'PASS' : 'FAIL'}: Live captions overlay`;
+            return result;
+        }
+
+        async function runAllTests() {
+            const tests = {
+                linkHighlighting: testLinkHighlighting,
+                dyslexiaFriendly: testDyslexiaFriendly,
+                websiteScaling: testWebsiteScaling,
+                imageHiding: testImageHiding,
+                cursorSize: testCursorSize,
+                soundControl: testSoundControl,
+                hoverHighlighting: testHoverHighlighting,
+                buttonEnlargement: testButtonEnlargement,
+                contrastAdjustment: testContrastAdjustment,
+                altTextGeneration: testAltTextGeneration,
+                liveCaptions: testLiveCaptions
+            };
+
+            const report = await testUtils.runTestSuite(tests, 'Accessibility Features');
+            updateTestResults(report);
+        }
+
+        function resetTests() {
+            // Clear all test results
+            const resultElements = document.querySelectorAll('[id$="-test-result"]');
+            resultElements.forEach(el => el.innerHTML = '');
+            
+            document.getElementById('test-results').innerHTML = '';
+            testUtils.results = [];
+            testUtils.startTime = Date.now();
+        }
+
+        function generateReport() {
+            const report = testUtils.generateReport();
+            updateTestResults(report);
+        }
+
+        function updateTestResults(report) {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = `
+Test Summary:
+=============
+Total Tests: ${report.total || report.summary?.total || 0}
+Passed: ${report.passed || report.summary?.passed || 0}
+Failed: ${report.failed || report.summary?.failed || 0}
+Success Rate: ${report.percentage || report.summary?.percentage || 0}%
+Duration: ${report.duration || report.summary?.duration || 0}ms
+
+Detailed Results:
+================
+${report.results?.map(r => `[${r.type.toUpperCase()}] ${r.message}`).join('\n') || 'No detailed results available'}
+            `;
+        }
+
+        // Initialize test environment
+        window.addEventListener('DOMContentLoaded', () => {
+            testUtils.log('Accessibility Features Test Page loaded', 'info');
+            testUtils.log('Use the BrowseEasy extension to enable features before testing', 'info');
+        });
+    </script>
+</body>
+</html> 

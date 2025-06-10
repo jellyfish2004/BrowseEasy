@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrowseEasy - Comprehensive Manual Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 20px 0;
+            padding: 20px;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .test-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        .test-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .test-btn:hover {
+            background: #0056b3;
+        }
+        .test-btn.secondary {
+            background: #6c757d;
+        }
+        .test-btn.success {
+            background: #28a745;
+        }
+        .test-btn.warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        .test-btn.danger {
+            background: #dc3545;
+        }
+        .test-links {
+            margin: 10px 0;
+        }
+        .test-links a {
+            color: #007bff;
+            text-decoration: underline;
+            margin-right: 15px;
+        }
+        .test-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .test-image {
+            width: 150px;
+            height: 100px;
+            object-fit: cover;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-media {
+            margin: 15px 0;
+        }
+        .test-video, .test-audio {
+            max-width: 100%;
+            margin: 10px 0;
+        }
+        .test-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .contrast-test {
+            background: linear-gradient(45deg, #333, #666);
+            color: white;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        .dyslexia-test {
+            font-size: 18px;
+            line-height: 1.8;
+            padding: 20px;
+            background: #fff9e6;
+            border-radius: 6px;
+        }
+        .cursor-test-area {
+            background: repeating-linear-gradient(
+                45deg,
+                #f0f0f0,
+                #f0f0f0 10px,
+                #e0e0e0 10px,
+                #e0e0e0 20px
+            );
+            padding: 40px;
+            text-align: center;
+            border-radius: 6px;
+            margin: 15px 0;
+            min-height: 100px;
+            cursor: pointer;
+        }
+        .instructions {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .feature-demo {
+            background: #e2e3e5;
+            border: 2px dashed #6c757d;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 6px;
+            text-align: center;
+        }
+        #test-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            z-index: 1000;
+            display: none;
+        }
+        .hover-target {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .hover-target:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
+    </style>
+</head>
+<body>
+    <div id="test-status">BrowseEasy Test Status</div>
+
+    <header>
+        <h1>🧪 BrowseEasy - Comprehensive Manual Test Page</h1>
+        <p class="instructions">
+            <strong>How to use this page:</strong>
+            1. Load the BrowseEasy extension
+            2. Open the extension panel
+            3. Test each feature using the content below
+            4. Verify all functionality works as expected
+        </p>
+    </header>
+
+    <div class="test-section">
+        <h2>🎨 Theme Testing</h2>
+        <p>Test all four themes by clicking the theme buttons in the extension panel:</p>
+        <div class="test-grid">
+            <div class="test-card">
+                <h3>☀️ Light Theme</h3>
+                <p>Clean, bright interface with standard colors</p>
+            </div>
+            <div class="test-card">
+                <h3>🌙 Dark Theme</h3>
+                <p>Dark background for reduced eye strain</p>
+            </div>
+            <div class="test-card">
+                <h3>⚫ High Contrast</h3>
+                <p>Maximum contrast for accessibility</p>
+            </div>
+            <div class="test-card">
+                <h3>🔲 Dark High Contrast</h3>
+                <p>Dark theme with maximum contrast</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📎 Link Highlighting Test</h2>
+        <p>These links should get yellow background and orange border when link highlighting is enabled:</p>
+        <div class="test-links">
+            <a href="#test1">Internal Test Link 1</a>
+            <a href="#test2">Internal Test Link 2</a>
+            <a href="https://example.com" target="_blank">External Link</a>
+            <a href="mailto:test@example.com">Email Link</a>
+            <a href="tel:+1234567890">Phone Link</a>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔤 Dyslexia-Friendly Text Test</h2>
+        <div class="dyslexia-test">
+            <p>This paragraph contains various text elements to test dyslexia-friendly formatting. The text should become easier to read with better fonts and increased letter spacing when the feature is enabled.</p>
+            <p><strong>Bold text</strong>, <em>italic text</em>, and <u>underlined text</u> should all be properly formatted.</p>
+            <p>Numbers: 123456789, Special characters: !@#$%^&*(), Mixed: Test123!@#</p>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Website Scaling Test</h2>
+        <p>This entire page should scale up or down when website scaling is adjusted. Test with different scale values like 75%, 125%, 150%, 200%.</p>
+        <div class="feature-demo">
+            <h3>Scale Reference Content</h3>
+            <p>Use this content to visually verify scaling changes.</p>
+            <small>Small text for scale testing</small>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🖼️ Image and Video Hiding Test</h2>
+        <p>These images and videos should disappear when image hiding is enabled:</p>
+        <div class="test-images">
+            <img class="test-image" src="https://via.placeholder.com/150x100/007bff/ffffff?text=Test+Image+1" alt="Test Image 1">
+            <img class="test-image" src="https://via.placeholder.com/150x100/28a745/ffffff?text=Test+Image+2" alt="Test Image 2">
+            <img class="test-image" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTUwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmYzEwNyIvPjx0ZXh0IHg9Ijc1IiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjMjEyNTI5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5TVkcgSW1hZ2U8L3RleHQ+PC9zdmc+" alt="SVG Test Image">
+        </div>
+        <div class="test-media">
+            <video class="test-video" controls width="300">
+                <source src="https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4" type="video/mp4">
+                <source src="data:video/mp4;base64," type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🖱️ Cursor Size Test</h2>
+        <div class="cursor-test-area">
+            <h3>Cursor Size Testing Area</h3>
+            <p>Move your cursor around this area to test cursor size changes.</p>
+            <p>Try different cursor sizes: 50%, 100%, 150%, 200%, 300%</p>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔇 Sound Control Test</h2>
+        <div class="test-media">
+            <h3>Audio Element</h3>
+            <audio class="test-audio" controls>
+                <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" type="audio/wav">
+                <source src="data:audio/mpeg;base64," type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
+            
+            <h3>Video with Audio</h3>
+            <video class="test-video" controls width="400">
+                <source src="https://sample-videos.com/zip/10/mp4/SampleVideo_640x360_1mb.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            
+            <p><strong>Test:</strong> These media elements should be muted when sound control is enabled.</p>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>✨ Hover Highlighting Test</h2>
+        <p>These elements should get highlighted when you hover over them (with hover highlighting enabled):</p>
+        <div class="test-grid">
+            <div class="hover-target">
+                <h4>Hover Target 1</h4>
+                <p>This div should highlight on hover</p>
+            </div>
+            <div class="hover-target">
+                <h4>Hover Target 2</h4>
+                <p>This div should also highlight on hover</p>
+            </div>
+        </div>
+        <div class="test-buttons">
+            <button class="test-btn hover-target">Hover Button 1</button>
+            <button class="test-btn secondary hover-target">Hover Button 2</button>
+            <input type="text" class="hover-target" placeholder="Hover over this input">
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔘 Button Enlargement Test</h2>
+        <p>These buttons should become larger when button enlargement is enabled:</p>
+        <div class="test-buttons">
+            <button class="test-btn">Primary Button</button>
+            <button class="test-btn secondary">Secondary Button</button>
+            <button class="test-btn success">Success Button</button>
+            <button class="test-btn warning">Warning Button</button>
+            <button class="test-btn danger">Danger Button</button>
+        </div>
+        <div class="test-form">
+            <button class="test-btn">Form Button 1</button>
+            <button class="test-btn secondary">Form Button 2</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🌈 Contrast Adjustment Test</h2>
+        <div class="contrast-test">
+            <h3>High Contrast Content</h3>
+            <p>This content has deliberately low contrast. When contrast adjustment is enabled, it should become more visible.</p>
+            <p style="color: #999;">This gray text should become more readable.</p>
+            <p style="color: #ccc;">This light gray text should also improve.</p>
+        </div>
+        <div style="background: #f0f0f0; color: #666; padding: 20px; border-radius: 6px;">
+            <h4>Subtle Content</h4>
+            <p>This content has subtle contrast that should be enhanced.</p>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🏷️ Alt Text Generation Test</h2>
+        <p>These images are missing alt text and should get AI-generated descriptions:</p>
+        <div class="test-images">
+            <img class="test-image" src="https://via.placeholder.com/150x100/dc3545/ffffff?text=No+Alt+1">
+            <img class="test-image" src="https://via.placeholder.com/150x100/6f42c1/ffffff?text=No+Alt+2">
+            <img class="test-image" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTUwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzIwYzk5NyIvPjx0ZXh0IHg9Ijc1IiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSIjZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5ObyBBbHQgVGV4dDwvdGV4dD48L3N2Zz4=">
+        </div>
+        <p><strong>Note:</strong> Check the generated alt text by inspecting the images or using a screen reader.</p>
+    </div>
+
+    <div class="test-section">
+        <h2>💬 Live Captions Test</h2>
+        <div class="test-media">
+            <h3>Test Audio/Video for Live Captions</h3>
+            <video class="test-video" controls width="400">
+                <source src="https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_5mb.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <p><strong>Test:</strong> Play this video with live captions enabled. Captions should appear at the bottom of the page.</p>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Form Elements Test</h2>
+        <div class="test-form">
+            <h3>Complete Form for Testing</h3>
+            <div class="form-group">
+                <label for="test-text">Text Input:</label>
+                <input type="text" id="test-text" placeholder="Test text input">
+            </div>
+            <div class="form-group">
+                <label for="test-email">Email Input:</label>
+                <input type="email" id="test-email" placeholder="test@example.com">
+            </div>
+            <div class="form-group">
+                <label for="test-select">Select Dropdown:</label>
+                <select id="test-select">
+                    <option>Option 1</option>
+                    <option>Option 2</option>
+                    <option>Option 3</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="test-textarea">Textarea:</label>
+                <textarea id="test-textarea" rows="4" placeholder="Test textarea content"></textarea>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox"> Checkbox Test
+                </label>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="radio" name="test-radio" value="1"> Radio Option 1
+                </label>
+                <label>
+                    <input type="radio" name="test-radio" value="2"> Radio Option 2
+                </label>
+            </div>
+            <button type="submit" class="test-btn">Submit Form</button>
+            <button type="reset" class="test-btn secondary">Reset Form</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🤖 AI Integration Test</h2>
+        <div class="instructions">
+            <h3>Test Commands to Try:</h3>
+            <ul>
+                <li><strong>"Make this page bigger"</strong> - Should scale to 150%</li>
+                <li><strong>"Scale to 120%"</strong> - Should scale to exactly 120%</li>
+                <li><strong>"Increase cursor size"</strong> - Should set cursor to 150%</li>
+                <li><strong>"Set cursor to 200%"</strong> - Should set cursor to exactly 200%</li>
+                <li><strong>"Enable link highlighting"</strong> - Should highlight all links</li>
+                <li><strong>"Make text dyslexia friendly"</strong> - Should improve text readability</li>
+                <li><strong>"Hide all images"</strong> - Should hide images and videos</li>
+                <li><strong>"Increase contrast"</strong> - Should boost page contrast</li>
+                <li><strong>"What is this page about?"</strong> - Should analyze page content</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Content Sharing Test</h2>
+        <p>Enable content sharing (📄 button) and then ask the AI questions about this page:</p>
+        <div class="feature-demo">
+            <h3>Sample Content for AI Analysis</h3>
+            <p>This is a comprehensive test page for the BrowseEasy browser extension. It contains various HTML elements, multimedia content, and interactive components designed to test all accessibility features.</p>
+            <ul>
+                <li>Accessibility features testing</li>
+                <li>Theme system verification</li>
+                <li>AI integration validation</li>
+                <li>Performance monitoring</li>
+            </ul>
+        </div>
+    </div>
+
+    <footer style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 6px;">
+        <h3>📋 Test Checklist</h3>
+        <p><strong>Complete this checklist to verify all features:</strong></p>
+        <ul style="list-style-type: none; padding: 0;">
+            <li>☐ Theme switching (all 4 themes)</li>
+            <li>☐ Link highlighting (yellow background, orange border)</li>
+            <li>☐ Dyslexia-friendly text (better fonts and spacing)</li>
+            <li>☐ Website scaling (50% to 300%)</li>
+            <li>☐ Image/video hiding</li>
+            <li>☐ Cursor size adjustment</li>
+            <li>☐ Sound muting</li>
+            <li>☐ Hover highlighting</li>
+            <li>☐ Button enlargement</li>
+            <li>☐ Contrast adjustment</li>
+            <li>☐ Alt text generation</li>
+            <li>☐ Live captions</li>
+            <li>☐ AI command processing</li>
+            <li>☐ Content sharing</li>
+            <li>☐ Settings persistence</li>
+        </ul>
+    </footer>
+
+    <script>
+        // Simple test status updates
+        function updateStatus(message) {
+            const status = document.getElementById('test-status');
+            status.textContent = message;
+            status.style.display = 'block';
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+        }
+
+        // Log test interactions
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('test-btn')) {
+                console.log('Test button clicked:', e.target.textContent);
+                updateStatus(`Clicked: ${e.target.textContent}`);
+            }
+        });
+
+        // Log hover events for testing
+        document.addEventListener('mouseover', (e) => {
+            if (e.target.classList.contains('hover-target')) {
+                console.log('Hover target entered:', e.target.textContent?.substring(0, 50) || e.target.tagName);
+            }
+        });
+
+        // Initialize test environment
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('🧪 BrowseEasy Manual Test Page loaded');
+            console.log('Ready for comprehensive testing of all features');
+            updateStatus('Test page loaded - ready for testing');
+        });
+
+        // Expose testing utilities
+        window.testUtils = {
+            updateStatus,
+            checkAccessibilityFeatures: () => {
+                console.log('Checking accessibility features...');
+                // Could implement automated checks here
+            },
+            logElementStyles: (selector) => {
+                const elements = document.querySelectorAll(selector);
+                elements.forEach(el => {
+                    const styles = window.getComputedStyle(el);
+                    console.log(`${selector} styles:`, {
+                        display: styles.display,
+                        backgroundColor: styles.backgroundColor,
+                        fontSize: styles.fontSize,
+                        cursor: styles.cursor
+                    });
+                });
+            }
+        };
+    </script>
+</body>
+</html> 
