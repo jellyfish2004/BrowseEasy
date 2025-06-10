@@ -5,6 +5,9 @@
   let accessibilityManager = null;
   let settingsManager = null;
   let debugMode = true; // Enable debug logging
+  let config = null;
+  let currentSpeechUtterance = null;
+  let lastRightClickedImage = null; // Track the last right-clicked image element
 
   function log(...args) {
     if (debugMode) {
@@ -214,8 +217,6 @@
   }
 
   // Text-to-Speech functionality
-  let currentSpeechUtterance = null;
-  
   function readTextAloud(text) {
     try {
       // Stop any current speech
@@ -278,8 +279,18 @@
       // Try multiple matching strategies
       let targetImage = null;
       
-      // 1. Try exact match first
-      targetImage = images.find(img => img.src === imageSrc);
+      // 0. PRIORITY: Use the last right-clicked image if it matches the source
+      if (lastRightClickedImage && 
+          (lastRightClickedImage.src === imageSrc || 
+           lastRightClickedImage.src.split('?')[0] === imageSrc.split('?')[0])) {
+        targetImage = lastRightClickedImage;
+        log('Using tracked right-clicked image element');
+      }
+      
+      // 1. Try exact match first (if not already found above)
+      if (!targetImage) {
+        targetImage = images.find(img => img.src === imageSrc);
+      }
       
       // 2. If not found, try matching without resolution suffixes (@1.5x, @2x, etc.)
       if (!targetImage) {
@@ -319,10 +330,18 @@
         log('Available image sources:', images.map(img => img.src).slice(0, 5));
         log('Tried clean src:', imageSrc.replace(/@[0-9.]+x/, ''));
         showTTSNotification('Image not found');
+        // Clear tracked image since we couldn't find a match
+        lastRightClickedImage = null;
         return;
       }
       
       log('Found target image, dimensions:', targetImage.width, 'x', targetImage.height);
+      
+      // Clear the tracked image now that we've used it
+      if (lastRightClickedImage === targetImage) {
+        lastRightClickedImage = null;
+        log('Cleared tracked right-clicked image after use');
+      }
       
       // Check if image already has alt text
       let altText = targetImage.alt?.trim();
@@ -609,8 +628,6 @@
           sendResponse({ success: true });
           break;
 
-
-
         default:
           const errorMsg = `Unknown message type: ${message.type}`;
           error(errorMsg);
@@ -827,5 +844,19 @@
   };
 
   log('Content script loaded, debug functions available');
+
+  // Add event listener to track right-clicked images
+  document.addEventListener('contextmenu', (event) => {
+    if (event.target && event.target.tagName === 'IMG') {
+      lastRightClickedImage = event.target;
+      log('Tracked right-clicked image:', event.target.src);
+      // Clear the tracked image after 10 seconds to avoid stale references
+      setTimeout(() => {
+        if (lastRightClickedImage === event.target) {
+          lastRightClickedImage = null;
+        }
+      }, 10000);
+    }
+  });
 
 })(); 
