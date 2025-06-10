@@ -213,9 +213,257 @@
     }
   }
 
+  // Text-to-Speech functionality
+  let currentSpeechUtterance = null;
+  
+  function readTextAloud(text) {
+    try {
+      // Stop any current speech
+      stopCurrentSpeech();
+      
+      if (!text || !text.trim()) {
+        log('No text to read');
+        return;
+      }
+      
+      // Check if speech synthesis is supported
+      if (!('speechSynthesis' in window)) {
+        error('Speech synthesis not supported in this browser');
+        showTTSNotification('Speech synthesis not supported in this browser');
+        return;
+      }
+      
+      // Create speech utterance
+      currentSpeechUtterance = new SpeechSynthesisUtterance(text.trim());
+      
+      // Set speech parameters
+      currentSpeechUtterance.rate = 0.9; // Slightly slower for better comprehension
+      currentSpeechUtterance.pitch = 1;
+      currentSpeechUtterance.volume = 0.8;
+      
+      // Event handlers
+      currentSpeechUtterance.onstart = () => {
+        log('Started reading text aloud');
+        showTTSNotification('🔊 Reading text aloud...', 2000);
+      };
+      
+      currentSpeechUtterance.onend = () => {
+        log('Finished reading text aloud');
+        currentSpeechUtterance = null;
+      };
+      
+      currentSpeechUtterance.onerror = (event) => {
+        error('Speech synthesis error:', event.error);
+        showTTSNotification(`Speech error: ${event.error}`);
+        currentSpeechUtterance = null;
+      };
+      
+      // Start speaking
+      speechSynthesis.speak(currentSpeechUtterance);
+      
+    } catch (err) {
+      error('Error in readTextAloud:', err);
+      showTTSNotification(`Error: ${err.message}`);
+    }
+  }
+  
+  async function readImageAloud(imageSrc) {
+    try {
+      log('Reading image aloud, imageSrc:', imageSrc);
+      
+      // Find the image element
+      const images = Array.from(document.querySelectorAll('img'));
+      log('Found', images.length, 'images on page');
+      
+      // Try multiple matching strategies
+      let targetImage = null;
+      
+      // 1. Try exact match first
+      targetImage = images.find(img => img.src === imageSrc);
+      
+      // 2. If not found, try matching without resolution suffixes (@1.5x, @2x, etc.)
+      if (!targetImage) {
+        const cleanImageSrc = imageSrc.replace(/@[0-9.]+x/, '');
+        targetImage = images.find(img => img.src === cleanImageSrc);
+        if (targetImage) {
+          log('Found image using cleaned URL:', cleanImageSrc);
+        }
+      }
+      
+      // 3. If still not found, try matching by basename
+      if (!targetImage) {
+        const imageName = imageSrc.split('/').pop().replace(/@[0-9.]+x/, '');
+        targetImage = images.find(img => {
+          const imgName = img.src.split('/').pop();
+          return imgName === imageName;
+        });
+        if (targetImage) {
+          log('Found image using basename match:', imageName);
+        }
+      }
+      
+      // 4. Last resort: try partial URL matching
+      if (!targetImage) {
+        const baseUrl = imageSrc.split('?')[0].replace(/@[0-9.]+x/, '');
+        targetImage = images.find(img => {
+          const imgBaseUrl = img.src.split('?')[0];
+          return imgBaseUrl.includes(baseUrl.split('/').pop()) || baseUrl.includes(imgBaseUrl.split('/').pop());
+        });
+        if (targetImage) {
+          log('Found image using partial URL match');
+        }
+      }
+      
+      if (!targetImage) {
+        error('Image not found with src:', imageSrc);
+        log('Available image sources:', images.map(img => img.src).slice(0, 5));
+        log('Tried clean src:', imageSrc.replace(/@[0-9.]+x/, ''));
+        showTTSNotification('Image not found');
+        return;
+      }
+      
+      log('Found target image, dimensions:', targetImage.width, 'x', targetImage.height);
+      
+      // Check if image already has alt text
+      let altText = targetImage.alt?.trim();
+      
+      if (altText) {
+        log('Image has existing alt text:', altText);
+        readTextAloud(`Image description: ${altText}`);
+        return;
+      }
+      
+      log('No existing alt text, generating...');
+      
+      // Generate alt text if not present
+      showTTSNotification('🤖 Generating image description...', 5000);
+      
+      try {
+        if (!accessibilityManager) {
+          error('Accessibility manager not initialized');
+          throw new Error('Accessibility manager not initialized');
+        }
+        
+        log('Getting image base64 data...');
+        
+        // Use existing alt text generation functionality
+        const imageData = await accessibilityManager.getImageBase64(targetImage);
+        
+        log('Got image data, MIME type:', imageData.mimeType, 'base64 length:', imageData.base64.length);
+        
+        const response = await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Alt text generation request timed out'));
+          }, 15000);
+          
+          log('Sending generateAltText message to background...');
+          
+          chrome.runtime.sendMessage({
+            type: 'generateAltText',
+            imgBase64: imageData.base64,
+            mimeType: imageData.mimeType,
+            originalSrc: targetImage.src
+          }, (response) => {
+            clearTimeout(timeout);
+            
+            if (chrome.runtime.lastError) {
+              error('Runtime error in generateAltText:', chrome.runtime.lastError);
+              return reject(chrome.runtime.lastError);
+            }
+            
+            log('Received response from background:', response);
+            resolve(response);
+          });
+        });
+        
+        if (response && response.altText && response.altText.trim()) {
+          altText = response.altText.trim();
+          // Set the alt text on the image for future use
+          targetImage.alt = altText;
+          log('Generated alt text successfully:', altText);
+          showTTSNotification('✅ Description generated');
+          readTextAloud(`Generated image description: ${altText}`);
+        } else if (response && response.error) {
+          throw new Error(`API error: ${response.error}`);
+        } else {
+          throw new Error('Empty alt text generated');
+        }
+        
+      } catch (genError) {
+        error('Failed to generate alt text:', genError);
+        showTTSNotification('❌ Failed to generate image description');
+        // Fall back to basic image info
+        try {
+          const fallbackText = `Image from ${new URL(imageSrc).hostname}`;
+          readTextAloud(fallbackText);
+        } catch (urlError) {
+          readTextAloud('Unable to describe image');
+        }
+      }
+      
+    } catch (err) {
+      error('Error in readImageAloud:', err);
+      showTTSNotification(`❌ Error: ${err.message}`);
+    }
+  }
+  
+  function stopCurrentSpeech() {
+    if (speechSynthesis && speechSynthesis.speaking) {
+      speechSynthesis.cancel();
+      log('Stopped current speech');
+    }
+    currentSpeechUtterance = null;
+  }
+  
+  function showTTSNotification(message, duration = 3000) {
+    // Create or update notification
+    let notification = document.getElementById('browseeasy-tts-notification');
+    
+    if (!notification) {
+      notification = document.createElement('div');
+      notification.id = 'browseeasy-tts-notification';
+      notification.style.cssText = `
+        position: fixed !important;
+        top: 20px !important;
+        right: 20px !important;
+        background: #1a73e8 !important;
+        color: white !important;
+        padding: 12px 20px !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+        z-index: 2147483646 !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        font-size: 14px !important;
+        max-width: 300px !important;
+        opacity: 0 !important;
+        transition: opacity 0.3s ease !important;
+        pointer-events: none !important;
+      `;
+      document.body.appendChild(notification);
+    }
+    
+    notification.textContent = message;
+    notification.style.opacity = '1';
+    
+    // Clear any existing timeout
+    if (notification.hideTimeout) {
+      clearTimeout(notification.hideTimeout);
+    }
+    
+    // Hide after duration
+    notification.hideTimeout = setTimeout(() => {
+      notification.style.opacity = '0';
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 300);
+    }, duration);
+  }
+
   // Listen for messages from the panel/background script
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    log('Received message:', message.type, 'from:', sender.id || 'unknown');
+    log('Received message:', message.type, 'from:', sender.id || 'unknown', 'full message:', message);
 
     try {
       switch (message.type) {
@@ -236,8 +484,36 @@
           sendResponse({ success: true, ready: true });
           break;
 
+        case 'readTextAloud':
+          log('Reading text aloud from context menu:', message.text);
+          try {
+            readTextAloud(message.text);
+            sendResponse({ success: true });
+          } catch (err) {
+            error('Error in readTextAloud:', err);
+            sendResponse({ error: err.message });
+          }
+          break;
+
+        case 'readImageAloud':
+          log('Reading image aloud from context menu:', message.imageSrc);
+          try {
+            readImageAloud(message.imageSrc).then(() => {
+              sendResponse({ success: true });
+            }).catch(err => {
+              error('Error in readImageAloud:', err);
+              sendResponse({ error: err.message });
+            });
+            return true; // Will respond asynchronously
+          } catch (err) {
+            error('Error in readImageAloud setup:', err);
+            sendResponse({ error: err.message });
+          }
+          break;
+
         case 'applySettings':
           if (!accessibilityManager) {
+            error('Accessibility manager not initialized for applySettings');
             sendResponse({ error: 'Accessibility manager not initialized' });
             break;
           }
@@ -248,21 +524,29 @@
 
         case 'executeFunction':
           if (!accessibilityManager) {
+            error('Accessibility manager not initialized for executeFunction');
             sendResponse({ error: 'Accessibility manager not initialized' });
             break;
           }
           log('Executing function:', message.functionName, 'with params:', message.parameters);
-          accessibilityManager.executeFunction(message.functionName, message.parameters);
-          sendResponse({ success: true });
+          try {
+            accessibilityManager.executeFunction(message.functionName, message.parameters);
+            sendResponse({ success: true });
+          } catch (err) {
+            error('Error executing function:', err);
+            sendResponse({ error: err.message });
+          }
           break;
 
         case 'updateSetting':
           if (!settingsManager) {
+            error('Settings manager not initialized for updateSetting');
             sendResponse({ error: 'Settings manager not initialized' });
             break;
           }
           log('Updating single setting:', message.key, '=', message.value);
           settingsManager.saveSettings({ [message.key]: message.value }).then(() => {
+            log('Single setting update successful');
             sendResponse({ success: true });
           }).catch(err => {
             error('Failed to update setting:', err);
@@ -272,6 +556,7 @@
 
         case 'updateSettings':
           if (!settingsManager || !accessibilityManager) {
+            error('Managers not initialized for updateSettings');
             sendResponse({ error: 'Managers not initialized' });
             break;
           }
@@ -280,6 +565,7 @@
             // Apply the updated settings to the accessibility manager
             const allSettings = settingsManager.getAllSettings();
             accessibilityManager.applySettings(allSettings);
+            log('Multiple settings update successful');
             sendResponse({ success: true });
           }).catch(err => {
             error('Failed to update settings:', err);
@@ -322,6 +608,8 @@
           accessibilityManager.clearAll();
           sendResponse({ success: true });
           break;
+
+
 
         default:
           const errorMsg = `Unknown message type: ${message.type}`;

@@ -955,12 +955,12 @@ class AccessibilityManager {
       });
     } catch (fetchError) {
       // Fallback to direct canvas approach for same-origin images
-      return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
         const imgEl = new Image();
-        imgEl.crossOrigin = 'Anonymous';
-        imgEl.onload = function() {
+      imgEl.crossOrigin = 'Anonymous';
+      imgEl.onload = function() {
           try {
-            const canvas = document.createElement('canvas');
+        const canvas = document.createElement('canvas');
             
             // Resize image to reduce token costs
             const maxSize = 512;
@@ -978,7 +978,7 @@ class AccessibilityManager {
             
             canvas.width = width;
             canvas.height = height;
-            const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d');
             ctx.drawImage(imgEl, 0, 0, width, height);
             
             // Default to PNG if we can't determine MIME type
@@ -991,55 +991,90 @@ class AccessibilityManager {
           }
         };
         imgEl.onerror = () => reject(new Error('Failed to load image with CORS'));
-        imgEl.src = img.src;
-      });
+      imgEl.src = img.src;
+    });
     }
   }
 
   // Generate alt text for images without alt, and return results (skipping tainted images)
   async generateAltTextForImages() {
+    console.log(`[BrowseEasy Alt Text] Starting alt text generation`);
+    
     const images = Array.from(document.querySelectorAll('img'));
+    console.log(`[BrowseEasy Alt Text] Found ${images.length} total images on page`);
+    
     const missingAltImages = images.filter(img => !img.hasAttribute('alt') || img.alt.trim() === '');
     const results = [];
     const skipped = [];
     
-    console.log(`[BrowseEasy] Found ${missingAltImages.length} images missing alt text`);
+    console.log(`[BrowseEasy Alt Text] Found ${missingAltImages.length} images missing alt text`);
+    
+    if (missingAltImages.length === 0) {
+      console.log(`[BrowseEasy Alt Text] No images need alt text generation`);
+      return { results: [], skipped: [] };
+    }
     
     for (const img of missingAltImages) {
       try {
-        console.log(`[BrowseEasy] Processing image: ${img.src}`);
+        console.log(`[BrowseEasy Alt Text] Processing image: ${img.src}`);
+        console.log(`[BrowseEasy Alt Text] Image dimensions: ${img.width}x${img.height}`);
+        
         const imageData = await this.getImageBase64(img);
+        console.log(`[BrowseEasy Alt Text] Got image data for ${img.src}, MIME: ${imageData.mimeType}`);
         
         const altText = await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Alt text generation timed out'));
+          }, 15000); // 15 second timeout
+          
           chrome.runtime.sendMessage({
             type: 'generateAltText',
             imgBase64: imageData.base64,
             mimeType: imageData.mimeType,
             originalSrc: img.src
           }, (response) => {
-            if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
-            if (response && response.altText) resolve(response.altText);
-            else reject(new Error('No alt text returned'));
+            clearTimeout(timeout);
+            
+            if (chrome.runtime.lastError) {
+              console.error(`[BrowseEasy Alt Text] Runtime error:`, chrome.runtime.lastError);
+              return reject(chrome.runtime.lastError);
+            }
+            
+            console.log(`[BrowseEasy Alt Text] Response for ${img.src}:`, response);
+            
+            if (response && response.altText) {
+              resolve(response.altText);
+            } else if (response && response.error) {
+              reject(new Error(response.error));
+            } else {
+              reject(new Error('No alt text returned in response'));
+            }
           });
         });
         
         if (altText && altText.trim()) {
           img.alt = altText.trim();
           results.push({ src: img.src, alt: altText.trim() });
-          console.log(`[BrowseEasy] Generated alt text for ${img.src}: "${altText}"`);
+          console.log(`[BrowseEasy Alt Text] SUCCESS - Generated alt text for ${img.src}: "${altText}"`);
         } else {
-          console.warn(`[BrowseEasy] Empty alt text returned for ${img.src}`);
+          console.warn(`[BrowseEasy Alt Text] Empty alt text returned for ${img.src}`);
           skipped.push(img.src);
         }
       } catch (e) {
-        console.warn(`[BrowseEasy] Failed to process image ${img.src}:`, e.message);
+        console.error(`[BrowseEasy Alt Text] FAILED to process image ${img.src}:`, e);
         skipped.push(img.src);
       }
     }
     
     // Send results and skipped to panel for chat display
+    try {
     chrome.runtime.sendMessage({ type: 'altTextResults', results, skipped });
-    console.log(`[BrowseEasy] Alt text generation complete: ${results.length} processed, ${skipped.length} skipped`);
+      console.log(`[BrowseEasy Alt Text] Sent results to panel`);
+    } catch (err) {
+      console.error(`[BrowseEasy Alt Text] Failed to send results to panel:`, err);
+    }
+    
+    console.log(`[BrowseEasy Alt Text] COMPLETE: ${results.length} processed, ${skipped.length} skipped`);
     return { results, skipped };
   }
 

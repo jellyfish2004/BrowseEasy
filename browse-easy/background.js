@@ -1,11 +1,164 @@
 // Import config
 importScripts('config.js');
 
+// Debug logging
+function log(...args) {
+  console.log('[BrowseEasy Background]', ...args);
+}
+
+function error(...args) {
+  console.error('[BrowseEasy Background ERROR]', ...args);
+}
+
+// Create context menus
+function createContextMenus() {
+  log('Creating context menus...');
+  
+  try {
+    // Remove existing menus first
+    chrome.contextMenus.removeAll(() => {
+      log('Removed existing context menus');
+      
+      // Context menu for selected text
+      chrome.contextMenus.create({
+        id: 'browse-easy-read-selection',
+        title: '🔊 Read selected text aloud',
+        contexts: ['selection']
+      }, () => {
+        if (chrome.runtime.lastError) {
+          error('Error creating selection context menu:', chrome.runtime.lastError);
+        } else {
+          log('Created selection context menu');
+        }
+      });
+      
+      // Context menu for images
+      chrome.contextMenus.create({
+        id: 'browse-easy-read-image',
+        title: '🖼️ Read image description aloud',
+        contexts: ['image']
+      }, () => {
+        if (chrome.runtime.lastError) {
+          error('Error creating image context menu:', chrome.runtime.lastError);
+        } else {
+          log('Created image context menu');
+        }
+      });
+    });
+  } catch (err) {
+    error('Error in createContextMenus:', err);
+  }
+}
+
+// Handle context menu clicks
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  log('Context menu clicked:', {
+    menuItemId: info.menuItemId,
+    tabId: tab.id,
+    tabUrl: tab.url,
+    selectionText: info.selectionText,
+    srcUrl: info.srcUrl
+  });
+
+  try {
+    if (info.menuItemId === 'browse-easy-read-selection') {
+      log('Processing read selection request');
+      
+      // Read selected text
+      const selectedText = info.selectionText;
+      if (selectedText && selectedText.trim()) {
+        log('Sending readTextAloud message to tab:', tab.id);
+        
+        const response = await chrome.tabs.sendMessage(tab.id, {
+          type: 'readTextAloud',
+          text: selectedText.trim()
+        });
+        
+        log('Response from content script:', response);
+      } else {
+        error('No selected text found');
+      }
+    } else if (info.menuItemId === 'browse-easy-read-image') {
+      log('Processing read image request');
+      
+      // Read image description
+      if (info.srcUrl) {
+        log('Sending readImageAloud message to tab:', tab.id);
+        
+        const response = await chrome.tabs.sendMessage(tab.id, {
+          type: 'readImageAloud',
+          imageSrc: info.srcUrl
+        });
+        
+        log('Response from content script:', response);
+      } else {
+        error('No image source URL found');
+      }
+    } else {
+      error('Unknown menu item ID:', info.menuItemId);
+    }
+  } catch (err) {
+    error('Error handling context menu click:', err);
+    
+    // Try to inject content scripts if they're not present
+    if (err.message && err.message.includes('Could not establish connection')) {
+      log('Content script seems missing, trying to inject...');
+      await injectContentScripts(tab.id);
+      
+      // Retry the operation
+      setTimeout(async () => {
+        try {
+          log('Retrying context menu operation...');
+          chrome.contextMenus.onClicked.removeListener(arguments.callee);
+          chrome.contextMenus.onClicked.addListener(arguments.callee);
+        } catch (retryErr) {
+          error('Retry failed:', retryErr);
+        }
+      }, 1000);
+    }
+  }
+});
+
+// Function to inject content scripts into a specific tab
+async function injectContentScripts(tabId) {
+  try {
+    log('Injecting content scripts into tab:', tabId);
+    
+    // Inject the content scripts in the same order as manifest.json
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ['config.js']
+    });
+    
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ['accessibility.js']
+    });
+    
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ['settings.js']
+    });
+    
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ['content.js']
+    });
+    
+    log('Successfully injected content scripts into tab:', tabId);
+  } catch (error) {
+    error('Failed to inject content scripts:', error);
+  }
+}
+
 // Inject content scripts into all existing tabs on startup
 chrome.runtime.onStartup.addListener(injectIntoExistingTabs);
 chrome.runtime.onInstalled.addListener((details) => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
     .catch(console.error);
+  
+  // Create context menus
+  createContextMenus();
   
   // Inject into existing tabs when extension is installed/enabled
   if (details.reason === 'install' || details.reason === 'enable') {
